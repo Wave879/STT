@@ -1,0 +1,1126 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Audio AI | COWORK System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/wavesurfer.js@7"></script>
+    <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Anuphan', sans-serif; background: #f0f2f5; }
+
+        .glass { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+
+        /* Transcript line */
+        .tx-line { border-radius: 8px; padding: 10px 12px; margin-bottom: 2px; transition: background .15s; }
+        .tx-line:hover { background: #f8fafc; }
+        .tx-line.active-line { background: #f0fdf4; border-left: 3px solid #22c55e; }
+
+        /* Speaker badge colors */
+        .spk-a { background: #dbeafe; color: #1d4ed8; }
+        .spk-b { background: #dcfce7; color: #15803d; }
+        .spk-c { background: #fef3c7; color: #b45309; }
+        .spk-d { background: #fce7f3; color: #9d174d; }
+
+        .clickable-word { cursor:pointer; padding:1px 3px; border-radius:3px; transition:all .15s; }
+        .clickable-word:hover { background:#dbeafe; color:#1d4ed8; }
+        .word-active { background:#1d4ed8!important; color:#fff!important; border-radius:3px; }
+
+        #waveform-container { width:100%; height:56px; background:#f8fafc; border-radius:8px; overflow:hidden; }
+
+        /* Scrollbars */
+        .tx-scroll::-webkit-scrollbar { width:4px; }
+        .tx-scroll::-webkit-scrollbar-track { background:transparent; }
+        .tx-scroll::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:4px; }
+
+        /* Tab active */
+        .tab-active { background:#111827; color:#fff!important; }
+
+        /* Context panel */
+        .ctx-tag { display:inline-flex; align-items:center; gap:4px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:20px; padding:2px 10px; font-size:11px; color:#475569; }
+
+        @keyframes pulse-ring { 0%,100%{opacity:.6} 50%{opacity:1} }
+        .processing-pulse { animation: pulse-ring 1.5s infinite; }
+
+        .step-done .dot { background:#22c55e; color:#fff; }
+        .step-current .dot { background:#6366f1; color:#fff; animation: pulse-ring 1.5s infinite; }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
+
+<!-- ── Navbar ─────────────────────────────────────────────────── -->
+<nav class="flex-none bg-white border-b border-slate-200 px-5 py-2.5 flex justify-between items-center z-50">
+    <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-sm">
+            <i class="fas fa-microchip"></i>
+        </div>
+        <div class="leading-none">
+            <p class="font-bold text-sm text-slate-900">COWORK <span class="text-indigo-600">AudioAI</span></p>
+            <p class="text-[9px] text-slate-400 uppercase tracking-widest">Enterprise Intelligence</p>
+        </div>
+        <div class="h-5 w-px bg-slate-200 mx-1"></div>
+        <span id="file-title" class="text-sm text-slate-500 font-medium">ยังไม่มีไฟล์</span>
+    </div>
+    <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 text-sm">
+            <i class="fas fa-user-tie"></i>
+        </div>
+    </div>
+</nav>
+
+<!-- ── 3-column layout ─────────────────────────────────────────── -->
+<div class="flex-1 flex overflow-hidden">
+
+    <!-- ══ LEFT PANEL ══════════════════════════════════════════════ -->
+    <aside class="w-64 flex-none bg-white border-r border-slate-200 flex flex-col overflow-y-auto tx-scroll">
+
+        <!-- Upload -->
+        <div class="p-4 border-b border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">ไฟล์เสียง</p>
+            <div id="drop-zone" class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 transition cursor-pointer">
+                <i class="fas fa-file-audio text-2xl text-slate-300 mb-2"></i>
+                <p class="text-xs text-slate-500 mb-2">ลากไฟล์หรือ</p>
+                <label class="cursor-pointer inline-block bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition">
+                    <i class="fas fa-folder-open mr-1"></i> เลือกไฟล์
+                    <input id="file-input" type="file" accept="audio/*,video/*" class="hidden">
+                </label>
+                <p class="text-[9px] text-slate-400 mt-1.5">MP3, WAV, M4A, FLAC</p>
+            </div>
+        </div>
+
+        <!-- Model -->
+        <div class="p-4 border-b border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">โมเดล STT</p>
+            <select id="model-select" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 transition appearance-none cursor-pointer">
+                <option value="all">ทุกโมเดล (Auto)</option>
+                <option value="model1">Azure Speech</option>
+                <option value="model3">MAI Transcribe</option>
+            </select>
+            <button id="main-action-btn" class="w-full mt-2 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <i class="fas fa-bolt mr-1"></i> ประมวลผล
+            </button>
+            <div id="process-status" class="hidden mt-2 text-[11px] px-2 py-1.5 rounded-lg"></div>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="p-4 border-b border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">ความก้าวหน้า</p>
+            <div class="space-y-3">
+                <div id="step-1" class="flex items-center gap-2.5">
+                    <div id="dot-1" class="dot w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-[10px]"><i class="fas fa-check"></i></div>
+                    <p class="text-xs text-slate-600">รับไฟล์เสียง</p>
+                </div>
+                <div id="step-2" class="flex items-center gap-2.5 opacity-40">
+                    <div id="dot-2" class="dot w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px]">2</div>
+                    <p class="text-xs text-slate-600">Clean Noise</p>
+                </div>
+                <div id="step-3" class="flex items-center gap-2.5 opacity-40">
+                    <div id="dot-3" class="dot w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px]">3</div>
+                    <p class="text-xs text-slate-600">STT Engines</p>
+                </div>
+                <div id="step-4" class="flex items-center gap-2.5 opacity-40">
+                    <div id="dot-4" class="dot w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px]">4</div>
+                    <p class="text-xs text-slate-600">Final Consensus</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call Stats -->
+        <div class="p-4 border-b border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Call Details</p>
+            <div class="space-y-2.5">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-400 flex items-center gap-1.5"><i class="fas fa-comments w-3.5 text-center"></i> โมเดลที่ใช้</span>
+                    <span id="stat-model" class="text-xs font-bold text-slate-700">—</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-400 flex items-center gap-1.5"><i class="fas fa-clock w-3.5 text-center"></i> ความยาว</span>
+                    <span id="stat-duration" class="text-xs font-bold text-slate-700">—</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-400 flex items-center gap-1.5"><i class="fas fa-file w-3.5 text-center"></i> ขนาดไฟล์</span>
+                    <span id="stat-size" class="text-xs font-bold text-slate-700">—</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-400 flex items-center gap-1.5"><i class="fas fa-users w-3.5 text-center"></i> ผู้พูด</span>
+                    <span id="stat-speakers" class="text-xs font-bold text-slate-700">—</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Speaker Map -->
+        <div class="p-4">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">ผู้พูด</p>
+            <div id="speaker-map" class="space-y-1.5">
+                <p class="text-[10px] text-slate-300 italic">จะแสดงหลังประมวลผล</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ══ CENTER ═══════════════════════════════════════════════════ -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+
+        <!-- Tabs + search bar -->
+        <div class="flex-none bg-white border-b border-slate-200 px-4 py-2 flex items-center gap-3">
+            <div class="flex gap-1 bg-slate-100 rounded-lg p-0.5">
+                <button id="tab-transcript" onclick="switchTab('transcript')" class="tab-btn tab-active text-xs font-bold px-3 py-1.5 rounded-md transition">Transcript</button>
+                <button id="tab-azure" onclick="switchTab('azure')" class="tab-btn text-xs font-bold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700 transition">Azure</button>
+                <button id="tab-mai" onclick="switchTab('mai')" class="tab-btn text-xs font-bold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700 transition">MAI</button>
+            </div>
+            <div class="flex-1 relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+                <input id="search-input" type="text" placeholder="ค้นหาในข้อความ..." oninput="searchTranscript(this.value)"
+                    class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            </div>
+            <div class="flex items-center gap-2">
+                <select id="final-model-select" class="border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] text-slate-600 bg-white focus:outline-none appearance-none cursor-pointer">
+                    <option value="final">Consensus</option>
+                    <option value="azure">Azure</option>
+                    <option value="mai">MAI</option>
+                </select>
+                <button id="save-final-btn" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1">
+                    <i class="fas fa-download text-[10px]"></i> บันทึก
+                </button>
+            </div>
+        </div>
+
+        <!-- Transcript area -->
+        <div class="flex-1 overflow-y-auto tx-scroll bg-white px-5 py-4">
+            <!-- Transcript tab -->
+            <div id="panel-transcript" class="tab-panel">
+                <div id="final-text-display" class="space-y-1 text-sm text-slate-700 leading-relaxed min-h-[200px]">
+                    <p class="text-slate-300 italic text-sm">อัพโหลดไฟล์แล้วกด "ประมวลผล" เพื่อเริ่มถอดความ...</p>
+                </div>
+            </div>
+            <!-- Azure tab -->
+            <div id="panel-azure" class="tab-panel hidden">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Azure Speech Services</span>
+                </div>
+                <div id="out-azure" class="text-xs text-slate-600 leading-relaxed">รอประมวลผล...</div>
+            </div>
+            <!-- MAI tab -->
+            <div id="panel-mai" class="tab-panel hidden">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">MAI Transcribe</span>
+                </div>
+                <div id="out-mai" class="text-xs text-slate-600 leading-relaxed">รอประมวลผล...</div>
+            </div>
+        </div>
+
+        <!-- ── Audio Player (bottom of center) ── -->
+        <div class="flex-none bg-white border-t border-slate-200 px-4 py-2.5">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="text-[11px] font-mono text-slate-400" id="current-time">00:00</span>
+                <div class="flex items-center gap-1">
+                    <button class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center text-[10px]" onclick="if(wavesurfer)wavesurfer.skip(-5)"><i class="fas fa-backward"></i></button>
+                    <button id="play-pause-btn" class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 transition text-xs">
+                        <i class="fas fa-play text-xs"></i>
+                    </button>
+                    <button class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center text-[10px]" onclick="if(wavesurfer)wavesurfer.skip(5)"><i class="fas fa-forward"></i></button>
+                </div>
+                <select onchange="if(wavesurfer)wavesurfer.setPlaybackRate(+this.value)" class="text-[11px] border border-slate-200 rounded px-1.5 py-0.5 text-slate-500 focus:outline-none">
+                    <option value="0.75">0.75x</option>
+                    <option value="1" selected>1.0x</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2.0x</option>
+                </select>
+                <span id="total-time" class="text-[11px] font-mono text-slate-300">00:00</span>
+            </div>
+            <div id="waveform-container"></div>
+        </div>
+    </div>
+
+    <!-- ══ RIGHT PANEL ══════════════════════════════════════════════ -->
+    <aside class="w-72 flex-none bg-white border-l border-slate-200 flex flex-col overflow-hidden">
+
+        <!-- Right tabs -->
+        <div class="flex-none border-b border-slate-200 px-3 pt-2.5 flex gap-1">
+            <button onclick="switchRight('comments')" id="rtab-comments" class="rtab-btn tab-active text-[11px] font-bold px-3 py-1.5 rounded-t-md transition">
+                <i class="fas fa-comments mr-1"></i> Comments
+            </button>
+            <button onclick="switchRight('context')" id="rtab-context" class="rtab-btn text-[11px] font-bold px-3 py-1.5 rounded-t-md text-slate-400 hover:text-slate-700 transition">
+                <i class="fas fa-info-circle mr-1"></i> Context
+            </button>
+            <button onclick="switchRight('summary')" id="rtab-summary" class="rtab-btn text-[11px] font-bold px-3 py-1.5 rounded-t-md text-slate-400 hover:text-slate-700 transition">
+                <i class="fas fa-wand-magic-sparkles mr-1"></i> Summary
+            </button>
+        </div>
+
+        <!-- Comments panel -->
+        <div id="rpanel-comments" class="rpanel flex-1 flex flex-col overflow-hidden">
+            <!-- Write comment -->
+            <div class="p-3 border-b border-slate-100">
+                <div class="flex items-start gap-2">
+                    <div class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs flex-none">
+                        <i class="fas fa-user text-[10px]"></i>
+                    </div>
+                    <div class="flex-1">
+                        <textarea id="comment-input" rows="2" placeholder="เขียน comment หรือ @ระบุคน..."
+                            class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none"></textarea>
+                        <div class="flex justify-between items-center mt-1.5">
+                            <span id="comment-ts" class="text-[10px] text-slate-300">ตอนนี้: 00:00</span>
+                            <button onclick="addComment()" class="text-[11px] bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg font-bold transition">ส่ง</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Comment list -->
+            <div id="comment-list" class="flex-1 overflow-y-auto tx-scroll p-3 space-y-3">
+                <p class="text-[11px] text-slate-300 text-center italic mt-4">ยังไม่มี comment</p>
+            </div>
+        </div>
+
+        <!-- Context panel -->
+        <div id="rpanel-context" class="rpanel hidden flex-1 flex flex-col overflow-y-auto tx-scroll p-3 space-y-4">
+            <!-- Participants -->
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">ผู้เข้าร่วม / Speaker Labels</p>
+                <div id="participant-list" class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <span class="ctx-tag spk-a">A</span>
+                        <input type="text" placeholder="ชื่อผู้พูด A..." data-spk="A"
+                            class="flex-1 text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-200" oninput="updateSpeakerLabel(this)">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="ctx-tag spk-b">B</span>
+                        <input type="text" placeholder="ชื่อผู้พูด B..." data-spk="B"
+                            class="flex-1 text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-200" oninput="updateSpeakerLabel(this)">
+                    </div>
+                    <button onclick="addSpeakerRow()" class="text-[11px] text-indigo-500 hover:text-indigo-700 font-medium mt-1"><i class="fas fa-plus mr-1"></i>เพิ่มผู้พูด</button>
+                </div>
+            </div>
+
+            <!-- Meeting Info -->
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">ข้อมูลการประชุม</p>
+                <div class="space-y-2">
+                    <input type="text" id="ctx-title" placeholder="ชื่อการประชุม / หัวข้อ" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                    <input type="text" id="ctx-date" placeholder="วันที่" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                    <textarea id="ctx-note" rows="3" placeholder="หมายเหตุ / บริบทเพิ่มเติม..."
+                        class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none"></textarea>
+                </div>
+            </div>
+
+            <!-- Attached Files -->
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">เอกสารแนบ</p>
+                <label class="block border-2 border-dashed border-slate-200 rounded-xl p-3 text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition">
+                    <i class="fas fa-paperclip text-slate-300 mb-1"></i>
+                    <p class="text-[11px] text-slate-400">คลิกเพื่อแนบไฟล์</p>
+                    <input type="file" multiple class="hidden" onchange="addAttachment(this)">
+                </label>
+                <div id="attachment-list" class="mt-2 space-y-1"></div>
+            </div>
+
+            <!-- Tags -->
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Tags</p>
+                <div class="flex flex-wrap gap-1 mb-1.5" id="tag-list"></div>
+                <div class="flex gap-1">
+                    <input type="text" id="tag-input" placeholder="เพิ่ม tag..." onkeydown="if(event.key==='Enter')addTag()"
+                        class="flex-1 text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                    <button onclick="addTag()" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1.5 rounded-lg font-medium transition">+</button>
+                </div>
+            </div>
+
+            <button onclick="saveContext()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition mt-2">
+                <i class="fas fa-save mr-1"></i> บันทึก Context
+            </button>
+        </div>
+
+        <!-- Summary panel -->
+        <div id="rpanel-summary" class="rpanel hidden flex-1 overflow-y-auto tx-scroll p-3">
+            <div id="summary-area" class="text-xs text-slate-600 leading-relaxed">
+                <div class="flex items-center gap-2 p-3 bg-orange-50 rounded-xl border border-orange-100 italic">
+                    <i class="fas fa-spinner fa-spin text-orange-400 text-sm"></i>
+                    <span>รอสรุปเนื้อหา...</span>
+                </div>
+            </div>
+        </div>
+
+    </aside>
+</div>
+
+
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        // UI: Tab switching (center)
+        // ═══════════════════════════════════════════════════════════════
+        function switchTab(name) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+            document.getElementById('panel-' + name).classList.remove('hidden');
+            document.getElementById('tab-' + name).classList.add('tab-active');
+        }
+
+        function switchRight(name) {
+            document.querySelectorAll('.rpanel').forEach(p => {
+                p.classList.add('hidden');
+                p.classList.remove('flex-1', 'flex', 'flex-col', 'overflow-hidden', 'overflow-y-auto', 'p-3');
+            });
+            document.querySelectorAll('.rtab-btn').forEach(b => b.classList.remove('tab-active'));
+            const panel = document.getElementById('rpanel-' + name);
+            panel.classList.remove('hidden');
+            document.getElementById('rtab-' + name).classList.add('tab-active');
+            // restore flex layout
+            if (name === 'comments') {
+                panel.classList.add('flex-1', 'flex', 'flex-col', 'overflow-hidden');
+            } else {
+                panel.classList.add('flex-1', 'overflow-y-auto', 'p-3');
+            }
+        }
+
+        // ── Comments ──────────────────────────────────────────────────
+        const _comments = [];
+        function addComment() {
+            const input = document.getElementById('comment-input');
+            const text = input.value.trim();
+            if (!text) return;
+            const ts = document.getElementById('current-time').textContent;
+            const id = Date.now();
+            _comments.push({ id, text, ts, time: Date.now() });
+            input.value = '';
+            renderComments();
+        }
+
+        function renderComments() {
+            const list = document.getElementById('comment-list');
+            if (!_comments.length) {
+                list.innerHTML = '<p class="text-[11px] text-slate-300 text-center italic mt-4">ยังไม่มี comment</p>';
+                return;
+            }
+            list.innerHTML = _comments.map(c => `
+                <div class="group flex gap-2 p-2.5 rounded-xl hover:bg-slate-50 transition">
+                    <div class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] flex-none font-bold">U</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-0.5">
+                            <span class="text-[11px] font-bold text-slate-700">คุณ</span>
+                            <span class="text-[10px] text-slate-300">${c.ts}</span>
+                            <button onclick="deleteComment(${c.id})" class="ml-auto text-[10px] text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><i class="fas fa-times"></i></button>
+                        </div>
+                        <p class="text-xs text-slate-600 break-words">${c.text.replace(/</g,'&lt;')}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteComment(id) {
+            const idx = _comments.findIndex(c => c.id === id);
+            if (idx > -1) { _comments.splice(idx, 1); renderComments(); }
+        }
+
+        // ── Context / Speaker Labels ───────────────────────────────────
+        const _speakerLabels = { A: '', B: '' };
+        let _spkCount = 2;
+        const _spkColors = ['spk-a','spk-b','spk-c','spk-d'];
+        const _spkLetters = ['A','B','C','D','E','F'];
+
+        function updateSpeakerLabel(input) {
+            const spk = input.dataset.spk;
+            _speakerLabels[spk] = input.value.trim();
+            // อัพเดท speaker map ในซ้าย
+            renderSpeakerMap();
+        }
+
+        function renderSpeakerMap() {
+            const map = document.getElementById('speaker-map');
+            const entries = Object.entries(_speakerLabels).filter(([,v]) => v);
+            if (!entries.length) {
+                map.innerHTML = '<p class="text-[10px] text-slate-300 italic">ยังไม่ได้ตั้งชื่อ</p>';
+                return;
+            }
+            map.innerHTML = entries.map(([k,v], i) =>
+                `<div class="flex items-center gap-2"><span class="ctx-tag ${_spkColors[i]||'spk-a'}">${k}</span><span class="text-xs text-slate-600 font-medium">${v}</span></div>`
+            ).join('');
+        }
+
+        function addSpeakerRow() {
+            if (_spkCount >= _spkLetters.length) return;
+            const letter = _spkLetters[_spkCount];
+            _speakerLabels[letter] = '';
+            _spkCount++;
+            const container = document.getElementById('participant-list');
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2';
+            const colorCls = _spkColors[_spkCount-1] || 'spk-a';
+            div.innerHTML = `
+                <span class="ctx-tag ${colorCls}">${letter}</span>
+                <input type="text" placeholder="ชื่อผู้พูด ${letter}..." data-spk="${letter}"
+                    class="flex-1 text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-200" oninput="updateSpeakerLabel(this)">
+            `;
+            container.insertBefore(div, container.lastElementChild);
+        }
+
+        // ── Attachments ────────────────────────────────────────────────
+        const _attachments = [];
+        function addAttachment(input) {
+            Array.from(input.files).forEach(f => {
+                _attachments.push(f);
+                const div = document.createElement('div');
+                div.className = 'flex items-center gap-2 p-1.5 bg-slate-50 rounded-lg';
+                div.innerHTML = `<i class="fas fa-file text-slate-300 text-xs"></i><span class="text-[11px] text-slate-600 truncate flex-1">${f.name}</span><span class="text-[10px] text-slate-300">${(f.size/1024).toFixed(0)}KB</span>`;
+                document.getElementById('attachment-list').appendChild(div);
+            });
+            input.value = '';
+        }
+
+        // ── Tags ───────────────────────────────────────────────────────
+        const _tags = [];
+        function addTag() {
+            const input = document.getElementById('tag-input');
+            const val = input.value.trim();
+            if (!val || _tags.includes(val)) return;
+            _tags.push(val);
+            input.value = '';
+            renderTags();
+        }
+        function renderTags() {
+            document.getElementById('tag-list').innerHTML = _tags.map((t,i) =>
+                `<span class="ctx-tag">${t}<button onclick="_tags.splice(${i},1);renderTags()" class="ml-1 text-slate-300 hover:text-red-400">&times;</button></span>`
+            ).join('');
+        }
+
+        function saveContext() {
+            const ctx = {
+                title: document.getElementById('ctx-title').value,
+                date: document.getElementById('ctx-date').value,
+                note: document.getElementById('ctx-note').value,
+                speakers: { ..._speakerLabels },
+                tags: [..._tags],
+            };
+            localStorage.setItem('meetingContext_' + (state.jobId || 'draft'), JSON.stringify(ctx));
+            const btn = event.target;
+            btn.textContent = '✅ บันทึกแล้ว';
+            setTimeout(() => { btn.innerHTML = '<i class="fas fa-save mr-1"></i> บันทึก Context'; }, 1500);
+        }
+
+        // ── Search ──────────────────────────────────────────────────────
+        function searchTranscript(query) {
+            const panel = document.querySelector('.tab-panel:not(.hidden)');
+            if (!panel) return;
+            const spans = panel.querySelectorAll('.clickable-word');
+            spans.forEach(s => {
+                if (query && s.textContent.toLowerCase().includes(query.toLowerCase())) {
+                    s.style.background = '#fef08a';
+                } else {
+                    s.style.background = '';
+                }
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // BROWSER-ONLY MODE: Azure + MAI + AI Summary (ไม่ต้องใช้ server)
+        // ═══════════════════════════════════════════════════════════════
+        const AZURE_KEY    = '';  // ใส่ Azure Speech Key ของคุณที่นี่
+        const AZURE_REGION = 'southeastasia';
+        const MAI_KEY      = '';  // ใส่ MAI Speech Key ของคุณที่นี่
+        const MAI_ENDPOINT = 'https://mai-speech.cognitiveservices.azure.com/';
+        const OAI_KEY      = '';  // ใส่ Azure OpenAI Key ของคุณที่นี่
+        const OAI_ENDPOINT = 'https://titiphon-resource.cognitiveservices.azure.com/';
+        const OAI_DEPLOY   = 'gpt-4o-mini-2';
+        const STT_LANG     = 'th-TH';
+
+        // ── แปลงไฟล์เสียง → PCM Int16Array (16kHz mono) ──────────────
+        async function toPCM16k(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            await audioCtx.close();
+            const TARGET_SR = 16000;
+            const offCtx = new OfflineAudioContext(1, Math.ceil(audioBuffer.duration * TARGET_SR), TARGET_SR);
+            const src = offCtx.createBufferSource();
+            src.buffer = audioBuffer;
+            src.connect(offCtx.destination);
+            src.start(0);
+            const rendered = await offCtx.startRendering();
+            const pcmFloat = rendered.getChannelData(0);
+            const int16 = new Int16Array(pcmFloat.length);
+            for (let i = 0; i < pcmFloat.length; i++) {
+                const s = Math.max(-1, Math.min(1, pcmFloat[i]));
+                int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            return int16;
+        }
+
+        // ── Azure Speech SDK STT (with speaker diarization via ConversationTranscriber) ──
+        async function runAzureSDK(int16, key, region, lang, onProgress) {
+            const sdk = window.SpeechSDK;
+            if (!sdk) throw new Error('Azure Speech SDK ไม่โหลด');
+            const pushStream = sdk.AudioInputStream.createPushStream(
+                sdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1)
+            );
+            pushStream.write(int16.buffer);
+            pushStream.close();
+            const speechConfig = sdk.SpeechConfig.fromSubscription(key, region);
+            speechConfig.speechRecognitionLanguage = lang;
+            const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream);
+
+            // helper: แปลง speakerId ("Guest_1") → number
+            const parseSpeakerId = (raw) => {
+                if (!raw || raw === 'Unknown') return null;
+                const n = parseInt(raw.replace(/\D+/g, ''));
+                return isNaN(n) ? raw : n;
+            };
+
+            // helper: format segments → speaker-labeled text
+            const formatSegs = (segs) => {
+                let out = '', prev = null;
+                segs.forEach(sg => {
+                    if (sg.speaker !== prev) {
+                        if (out) out += '\n';
+                        out += `[ผู้พูด ${sg.speaker}]\n`;
+                        prev = sg.speaker;
+                    }
+                    out += sg.text + ' ';
+                });
+                return out.trim();
+            };
+
+            // ลอง ConversationTranscriber ก่อน (รองรับ diarization)
+            if (sdk.ConversationTranscriber) {
+                const transcriber = new sdk.ConversationTranscriber(speechConfig, audioConfig);
+                const segments = [];
+                let count = 0;
+                return new Promise((resolve, reject) => {
+                    transcriber.transcribed = (s, e) => {
+                        if (e.result.reason === sdk.ResultReason.RecognizedSpeech && e.result.text) {
+                            const spk = parseSpeakerId(e.result.speakerId) ?? (segments.length + 1);
+                            // รวม segment ถ้า speaker เดียวกันติดกัน
+                            const last = segments[segments.length - 1];
+                            if (last && last.speaker === spk) {
+                                last.text += ' ' + e.result.text;
+                            } else {
+                                segments.push({ speaker: spk, text: e.result.text });
+                            }
+                            count++;
+                            if (onProgress) onProgress(formatSegs(segments), count);
+                        }
+                    };
+                    transcriber.canceled = (s, e) => {
+                        transcriber.stopTranscribingAsync();
+                        e.reason === sdk.CancellationReason.Error
+                            ? reject(new Error(e.errorDetails))
+                            : resolve(formatSegs(segments));
+                    };
+                    transcriber.sessionStopped = () => {
+                        transcriber.stopTranscribingAsync();
+                        resolve(formatSegs(segments));
+                    };
+                    transcriber.startTranscribingAsync(() => {}, err => reject(new Error(String(err))));
+                });
+            }
+
+            // fallback: SpeechRecognizer ธรรมดา (ไม่มี diarization)
+            const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
+            let fullText = '', count = 0;
+            return new Promise((resolve, reject) => {
+                recognizer.recognized = (s, e) => {
+                    if (e.result.reason === sdk.ResultReason.RecognizedSpeech && e.result.text) {
+                        fullText += e.result.text + ' ';
+                        count++;
+                        if (onProgress) onProgress(fullText.trim(), count);
+                    }
+                };
+                recognizer.canceled = (s, e) => {
+                    recognizer.stopContinuousRecognitionAsync();
+                    e.reason === sdk.CancellationReason.Error
+                        ? reject(new Error(e.errorDetails))
+                        : resolve(fullText.trim());
+                };
+                recognizer.sessionStopped = () => {
+                    recognizer.stopContinuousRecognitionAsync();
+                    resolve(fullText.trim());
+                };
+                recognizer.startContinuousRecognitionAsync(() => {}, err => reject(new Error(String(err))));
+            });
+        }
+
+        // ── MAI Speech REST API STT ───────────────────────────────────
+        async function runMAIRest(file, lang) {
+            const url = `${MAI_ENDPOINT.replace(/\/$/, '')}/speechtotext/transcriptions:transcribe?api-version=2025-10-15`;
+            const definition = JSON.stringify({ locales: [lang], profanityFilterMode: 'None', diarize: true });
+            const formData = new FormData();
+            formData.append('audio', file, file.name);
+            formData.append('definition', new Blob([definition], { type: 'application/json' }));
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Ocp-Apim-Subscription-Key': MAI_KEY },
+                body: formData,
+            });
+            if (!resp.ok) throw new Error(`MAI HTTP ${resp.status}`);
+            const data = await resp.json();
+            const phrases = data.phrases || [];
+            if (!phrases.length) {
+                // fallback: ใช้ combinedPhrases ถ้าไม่มี phrases
+                const combined = data.combinedPhrases || [];
+                return combined.map(p => p.text || '').join(' ').trim();
+            }
+            // จัดกลุ่มตาม speaker — ถ้า API ไม่ส่ง speaker field ให้ fallback เป็น plain text
+            const hasSpeaker = phrases.some(p => p.speaker != null);
+            if (!hasSpeaker) {
+                return phrases.map(p => p.text || '').join(' ').trim();
+            }
+            let result = '', lastSpk = null;
+            phrases.forEach(phrase => {
+                if (!phrase.text) return;
+                const spk = (phrase.speaker ?? 0) + 1; // แปลง 0-index → 1-index
+                if (spk !== lastSpk) {
+                    if (result) result += '\n';
+                    result += `[ผู้พูด ${spk}]\n`;
+                    lastSpk = spk;
+                }
+                result += phrase.text + ' ';
+            });
+            return result.trim();
+        }
+
+        // ── Azure OpenAI Summary ──────────────────────────────────────
+        async function runAISummary(text) {
+            const url = `${OAI_ENDPOINT.replace(/\/$/, '')}/openai/deployments/${OAI_DEPLOY}/chat/completions?api-version=2024-02-01`;
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'api-key': OAI_KEY },
+                body: JSON.stringify({
+                    messages: [
+                        { role: 'system', content: 'คุณเป็น AI ผู้ช่วยสรุปการประชุม ตอบเป็นภาษาไทย' },
+                        { role: 'user', content: `สรุปบทสนทนานี้เป็นหัวข้อสำคัญ และ action items:\n\n${text.substring(0, 8000)}` }
+                    ],
+                    max_tokens: 800,
+                    temperature: 0.3,
+                })
+            });
+            if (!resp.ok) throw new Error(`OpenAI HTTP ${resp.status}`);
+            const data = await resp.json();
+            return data.choices?.[0]?.message?.content || '';
+        }
+
+        // ── Main no-server flow ───────────────────────────────────────
+        async function runAllBrowser(file) {
+            switchTab('transcript');
+            finalText.innerHTML = '<p class="text-slate-400 italic text-sm"><i class="fas fa-spinner fa-spin mr-2"></i> กำลังเตรียมไฟล์...</p>';
+
+            // Step 1: Decode PCM
+            showStatus('🎧 กำลัง decode ไฟล์เสียง...', 'info');
+            updateProgressDots(1);
+            let int16;
+            try {
+                int16 = await toPCM16k(file);
+            } catch (e) {
+                throw new Error('decode ไฟล์ไม่ได้: ' + e.message);
+            }
+
+            // Step 2: Azure STT + MAI STT ขนานกัน
+            updateProgressDots(2);
+            showStatus('🎤 กำลังถอดความ (Azure + MAI)...', 'info');
+            outAz.innerHTML = '<span class="text-slate-400 italic text-xs"><i class="fas fa-spinner fa-spin mr-1"></i> กำลังถอด...</span>';
+            outMai.innerHTML = '<span class="text-slate-400 italic text-xs"><i class="fas fa-spinner fa-spin mr-1"></i> กำลังถอด...</span>';
+
+            const [azResult, maiResult] = await Promise.allSettled([
+                runAzureSDK(int16, AZURE_KEY, AZURE_REGION, STT_LANG, (txt, n) => {
+                    renderClickableText(outAz, txt);
+                    showStatus(`🎤 Azure: ถอดแล้ว ${n} ประโยค...`, 'info');
+                }),
+                runMAIRest(file, STT_LANG),
+            ]);
+
+            const azText  = azResult.status  === 'fulfilled' ? azResult.value  : '';
+            const maiText = maiResult.status === 'fulfilled' ? maiResult.value : '';
+
+            if (azText)  { state.results.azure = azText;  renderClickableText(outAz,  azText); }
+            else { outAz.innerHTML = `<span class="text-red-400 text-xs">❌ ${azResult.reason?.message || 'ไม่สำเร็จ'}</span>`; }
+
+            if (maiText) { state.results.mai = maiText;   renderClickableText(outMai, maiText); }
+            else { outMai.innerHTML = `<span class="text-red-400 text-xs">❌ ${maiResult.reason?.message || 'ไม่สำเร็จ'}</span>`; }
+
+            // Step 3: Consensus (ใช้ Azure เป็น primary, MAI เป็น fallback)
+            updateProgressDots(3);
+            const finalTxt = azText || maiText || '';
+            if (!finalTxt) throw new Error('ถอดความไม่สำเร็จทุกโมเดล');
+            state.results.final = finalTxt;
+            renderClickableText(finalText, finalTxt);
+            switchTab('transcript');
+
+            // Step 4: AI Summary
+            updateProgressDots(4);
+            showStatus('🤖 กำลังสรุปด้วย AI...', 'info');
+            try {
+                const summary = await runAISummary(finalTxt);
+                if (summary) {
+                    summaryArea.innerHTML = `<div class="prose prose-sm max-w-none text-slate-700 leading-relaxed whitespace-pre-wrap">${summary}</div>`;
+                    switchRight('summary');
+                }
+            } catch (e) {
+                summaryArea.innerHTML = `<span class="text-slate-400 text-xs italic">AI Summary ไม่สำเร็จ: ${e.message}</span>`;
+            }
+
+            document.getElementById('stat-model').textContent = 'Azure + MAI';
+            // นับจำนวน speaker ที่ตรวจพบ
+            const _spkMatches = finalTxt.match(/\[ผู้พูด\s+[^\]]+\]/g) || [];
+            const _uniqueSpk = new Set(_spkMatches).size;
+            document.getElementById('stat-speakers').textContent = _uniqueSpk > 0 ? `${_uniqueSpk} คน` : '—';
+            showStatus('✅ เสร็จสิ้น!', 'ok');
+            setTimeout(hideStatus, 4000);
+        }
+        // Global State
+        const state = {
+            jobId: null,
+            currentFile: null,
+            isProcessing: false,
+        };
+
+        // Initialize WaveSurfer
+        let wavesurfer;
+        try {
+            wavesurfer = WaveSurfer.create({
+                container: '#waveform-container',
+                waveColor: '#cbd5e1',
+                progressColor: '#f97316',
+                cursorColor: '#ea580c',
+                barWidth: 3,
+                barRadius: 3,
+                responsive: true,
+                height: 120,
+                normalize: true,
+                backend: 'WebAudio',
+            });
+
+            // Error handling
+            wavesurfer.on('error', (err) => {
+                console.warn('WaveSurfer error:', err);
+            });
+        } catch (e) {
+            console.error('WaveSurfer init failed:', e);
+            wavesurfer = null;
+        }
+
+        const runBtn = document.getElementById('main-action-btn');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const timeDisplay = document.getElementById('current-time');
+        const dropZone = document.getElementById('drop-zone');
+        
+        const outAz = document.getElementById('out-azure');
+        const outMai = document.getElementById('out-mai');
+        const finalText = document.getElementById('final-text-display');
+        const summaryArea = document.getElementById('summary-area');
+        const finalModelSelect = document.getElementById('final-model-select');
+
+        // เก็บผลลัพธ์แต่ละโมเดลไว้ใน state
+        state.results = { azure: '', mai: '', final: '' };
+
+        finalModelSelect.addEventListener('change', () => {
+            const picked = state.results[finalModelSelect.value];
+            if (picked) {
+                renderClickableText(finalText, picked);
+            } else {
+                finalText.innerHTML = '<span class="text-slate-300 italic">ยังไม่มีข้อมูลจากโมเดลนี้</span>';
+            }
+        });
+
+        document.getElementById('save-final-btn').addEventListener('click', () => {
+            const text = finalText.innerText;
+            if (!text || text.includes('เริ่มต้นการทำงาน') || text.includes('ยังไม่มีข้อมูล')) return;
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'sound_final.txt';
+            a.click();
+        });
+
+        // === DROP ZONE / FILE UPLOAD ===
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.background = 'rgba(99, 102, 241, 0.1)';
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.background = '';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.background = '';
+            if (e.dataTransfer.files.length > 0) {
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+
+        // ปุ่มเลือกไฟล์ใหม่ — ใช้ <input> ที่อยู่ใน label
+        document.getElementById('file-input').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFileSelect(e.target.files[0]);
+        });
+
+        // === SELECT FILE (local preview — no backend needed) ===
+        function handleFileSelect(file) {
+            state.currentFile = file;
+            // local job id placeholder until actual upload
+            state.jobId = null;
+
+            dropZone.innerHTML = `
+                <i class="fas fa-check-circle text-3xl text-green-500 mb-2"></i>
+                <p class="text-sm font-bold text-slate-800 truncate max-w-[160px] mx-auto">${file.name}</p>
+                <p class="text-[10px] text-green-500 font-bold mt-1 uppercase">โหลดไฟล์แล้ว ✓</p>
+            `;
+            runBtn.disabled = false;
+
+            // Update navbar + stats immediately (no backend)
+            document.getElementById('file-title').textContent = file.name;
+            document.getElementById('stat-model').textContent = document.getElementById('model-select').selectedOptions[0].text;
+            document.getElementById('stat-size').textContent = (file.size / 1024 / 1024).toFixed(1) + ' MB';
+
+            // Load audio to WaveSurfer from local blob
+            if (wavesurfer) {
+                try {
+                    wavesurfer.load(URL.createObjectURL(file));
+                } catch (audioErr) {
+                    console.warn('WaveSurfer load error (non-critical):', audioErr);
+                }
+            }
+        }
+
+        // === PLAY / PAUSE ===
+        playPauseBtn.addEventListener('click', () => {
+            if (!wavesurfer) return;
+            wavesurfer.playPause();
+            const icon = playPauseBtn.querySelector('i');
+            icon.className = wavesurfer.isPlaying() ? 'fas fa-pause text-xs' : 'fas fa-play text-xs';
+        });
+
+        if (wavesurfer) {
+            wavesurfer.on('timeupdate', (time) => {
+                const mins = Math.floor(time / 60).toString().padStart(2, '0');
+                const secs = Math.floor(time % 60).toString().padStart(2, '0');
+                timeDisplay.innerText = `${mins}:${secs}`;
+                document.getElementById('comment-ts').textContent = `ตอนนี้: ${mins}:${secs}`;
+                highlightWordsAtTime(time);
+            });
+
+            // เมื่อ audio โหลดเสร็จ re-assign timestamps ให้ทุก container
+            wavesurfer.on('ready', () => {
+                const dur = wavesurfer.getDuration();
+                const m = Math.floor(dur / 60).toString().padStart(2, '0');
+                const s = Math.floor(dur % 60).toString().padStart(2, '0');
+                document.getElementById('total-time').textContent = `${m}:${s}`;
+                document.getElementById('stat-duration').textContent = `${m}:${s}`;
+
+                document.querySelectorAll('#out-azure, #out-mai, #final-text-display').forEach(container => {
+                    const spans = container.querySelectorAll('.clickable-word');
+                    if (spans.length > 0) {
+                        const words = Array.from(spans).map(s => s.innerText.trim());
+                        assignWordTimestamps(container, words);
+                    }
+                });
+            });
+        }
+
+        // === START PROCESSING ===
+        function showStatus(msg, type) {
+            const el = document.getElementById('process-status');
+            el.classList.remove('hidden', 'bg-red-50', 'text-red-600', 'bg-yellow-50', 'text-yellow-700', 'bg-green-50', 'text-green-700', 'bg-blue-50', 'text-blue-600');
+            if (type === 'error')   el.classList.add('bg-red-50', 'text-red-600');
+            if (type === 'warn')    el.classList.add('bg-yellow-50', 'text-yellow-700');
+            if (type === 'ok')      el.classList.add('bg-green-50', 'text-green-700');
+            if (type === 'info')    el.classList.add('bg-blue-50', 'text-blue-600');
+            el.textContent = msg;
+        }
+        function hideStatus() {
+            document.getElementById('process-status').classList.add('hidden');
+        }
+
+        runBtn.addEventListener('click', async () => {
+            if (!state.currentFile) {
+                showStatus('⚠️ กรุณาเลือกไฟล์ก่อน', 'warn');
+                return;
+            }
+
+            state.isProcessing = true;
+            runBtn.disabled = true;
+            runBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังประมวลผล...';
+            try {
+                await runAllBrowser(state.currentFile);
+            } catch (err) {
+                showStatus('❌ ' + err.message, 'error');
+                finalText.innerHTML = `<div class="p-3 bg-red-50 rounded-xl border border-red-200 text-sm text-red-700"><i class="fas fa-exclamation-circle mr-2"></i>${err.message}</div>`;
+            }
+            runBtn.disabled = false;
+            runBtn.innerHTML = '<i class="fas fa-bolt mr-1"></i> ประมวลผล';
+            state.isProcessing = false;
+        });
+
+
+        function updateProgressDots(currentStep) {
+            for (let i = 1; i <= 4; i++) {
+                const stepEl = document.getElementById(`step-${i}`);
+                const dotEl = document.getElementById(`dot-${i}`);
+                
+                // Safe check - element might not exist
+                if (!stepEl || !dotEl) continue;
+                
+                if (i <= currentStep) {
+                    stepEl.style.opacity = '1';
+                    dotEl.className = 'w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-xs';
+                    dotEl.innerHTML = '<i class="fas fa-check"></i>';
+                } else {
+                    stepEl.style.opacity = '0.4';
+                }
+            }
+        }
+
+
+        function assignWordTimestamps(container, words) {
+            // ดึง duration จริงจาก WaveSurfer
+            const dur = (wavesurfer && wavesurfer.getDuration && wavesurfer.getDuration() > 0.5)
+                ? wavesurfer.getDuration() : null;
+            if (!dur) return false; // ยังไม่พร้อม
+            const wd = dur / Math.max(words.length, 1);
+            const spans = container.querySelectorAll('.clickable-word');
+            spans.forEach((span, idx) => {
+                span.dataset.start = (idx * wd).toFixed(3);
+                span.dataset.end = ((idx + 1) * wd).toFixed(3);
+            });
+            return true;
+        }
+
+        // regex ตรวจ speaker header เช่น [ผู้พูด 1]
+        const _SPK_RE = /^\[ผู้พูด\s+(.+?)\]$/;
+        const _spkBadgeColors = ['spk-a','spk-b','spk-c','spk-d'];
+
+        function renderClickableText(container, text, isFinal = false) {
+            container.innerHTML = '';
+            if (!text) {
+                container.textContent = 'รอผลลัพธ์...';
+                return;
+            }
+
+            const lines = text.split(/\r?\n/);
+            // นับเฉพาะคำจากบรรทัดเนื้อหา (ไม่นับ speaker header)
+            const allWords = [];
+            lines.forEach(line => {
+                if (!_SPK_RE.test(line.trim()))
+                    line.split(/\s+/).filter(w => w.length > 0).forEach(w => allWords.push(w));
+            });
+            const totalWords = Math.max(allWords.length, 1);
+
+            const spkColorMap = {};
+            let spkColorIdx = 0;
+            let wordIdx = 0;
+
+            lines.forEach((line, lineIdx) => {
+                const trimmed = line.trim();
+                const spkMatch = trimmed.match(_SPK_RE);
+
+                if (spkMatch) {
+                    // ── render speaker badge ──
+                    const spkId = spkMatch[1];
+                    if (!spkColorMap[spkId])
+                        spkColorMap[spkId] = _spkBadgeColors[spkColorIdx++ % _spkBadgeColors.length];
+                    if (lineIdx > 0) container.appendChild(document.createElement('br'));
+                    const badge = document.createElement('span');
+                    badge.className = `ctx-tag ${spkColorMap[spkId]} mr-1 my-1 inline-block`;
+                    badge.style.fontWeight = '600';
+                    badge.textContent = `👤 ผู้พูด ${spkId}`;
+                    container.appendChild(badge);
+                    container.appendChild(document.createElement('br'));
+                    return;
+                }
+
+                // ── render normal words ──
+                const words = line.split(/\s+/).filter(w => w.length > 0);
+                words.forEach((word) => {
+                    const myIdx = wordIdx++;
+                    const span = document.createElement('span');
+                    span.innerText = word + ' ';
+                    span.className = isFinal ? 'clickable-word text-slate-800' : 'clickable-word';
+                    span.dataset.ratio = (myIdx / totalWords).toFixed(4);
+
+                    span.onclick = () => {
+                        const ratio = parseFloat(span.dataset.ratio);
+                        let seekTime;
+                        if (span.dataset.start) {
+                            seekTime = parseFloat(span.dataset.start);
+                        } else {
+                            const dur = wavesurfer ? wavesurfer.getDuration() : 0;
+                            seekTime = dur > 0 ? dur * ratio : 0;
+                        }
+                        // เล่นเสียงตรงตำแหน่งนั้น
+                        if (wavesurfer) {
+                            try {
+                                wavesurfer.setTime(seekTime);
+                                wavesurfer.play();
+                                const icon = playPauseBtn.querySelector('i');
+                                if (icon) icon.className = 'fas fa-pause text-xs';
+                            } catch (e) {}
+                        }
+                        // sync ทุก container ไปตำแหน่งเดียวกัน
+                        syncContainersByRatio(ratio, container);
+                    };
+                    container.appendChild(span);
+                });
+                if (lineIdx < lines.length - 1) {
+                    const nextTrimmed = (lines[lineIdx + 1] || '').trim();
+                    if (!_SPK_RE.test(nextTrimmed))
+                        container.appendChild(document.createElement('br'));
+                }
+            });
+
+            const assigned = assignWordTimestamps(container, allWords);
+            if (!assigned && wavesurfer) {
+                const retry = () => assignWordTimestamps(container, allWords);
+                wavesurfer.once('ready', retry);
+                wavesurfer.once('decode', retry);
+            }
+        }
+
+function syncContainersByRatio(ratio, sourceContainer) {
+            [outAz, outMai, finalText].forEach(c => {
+                if (!c || c === sourceContainer) return;
+                const spans = Array.from(c.querySelectorAll('.clickable-word'));
+                if (!spans.length) return;
+                // หา span ที่ ratio ใกล้ที่สุด
+                let best = spans[0], bestDiff = Infinity;
+                spans.forEach(s => {
+                    const diff = Math.abs(parseFloat(s.dataset.ratio || 0) - ratio);
+                    if (diff < bestDiff) { bestDiff = diff; best = s; }
+                });
+                // highlight
+                spans.forEach(s => s.classList.remove('word-active'));
+                best.classList.add('word-active');
+                // scroll ไปหาคำนั้น
+                best.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            });
+        }
+
+        function highlightWordsAtTime(currentTime) {
+            if (currentTime == null) return;
+            const allWords = document.querySelectorAll('.clickable-word');
+            allWords.forEach(word => {
+                const start = parseFloat(word.dataset.start || 0);
+                const end   = parseFloat(word.dataset.end   || (start + 1));
+                if (currentTime >= start && currentTime < end) {
+                    word.classList.add('word-active');
+                } else {
+                    word.classList.remove('word-active');
+                }
+            });
+        }
+
+        function updateProgress(step, msg) {
+            const row = document.getElementById(`step-${step}`);
+            const dot = document.getElementById(`dot-${step}`);
+            row.style.opacity = "1";
+            dot.className = "w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-xs";
+            dot.innerHTML = '<i class="fas fa-check"></i>';
+        }
+
+
+    </script>
+
+</body>
+</html>

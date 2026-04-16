@@ -1,0 +1,96 @@
+# Environment Variables (NEVER commit!)
+.env
+.env.local
+.env.*.local
+
+# API Keys & Credentials
+*.key
+*.pem
+*.p8
+credentials.json
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs
+*.log
+logs/
+processing/logs/*.log
+
+# Temporary Files
+*.tmp
+temp/
+*.cache
+.cache/
+
+# Audio Files (optional - uncomment if needed)
+# input/audio_files/*
+# !input/audio_files/.gitkeep
+
+# Output Files (optional - uncomment if needed)
+# output/archive/*
+# output/stt_final/*
+# output/summaries/*
+
+# OS Files
+Thumbs.db
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node modules (if applicable)
+node_modules/
+npm-debug.log
+
+# Dependencies
+.pip-cache/
+
+output/archive/
+tools/*.exe
+tools/*.zip
+web/uploads/*.wav
+web/uploads/*.mp3
+web/uploads/*.m4a
+web/uploads/*.flac
+web/uploads/*.ogg
+web/uploads/*.webm
+web/uploads/*.mp4
+web/uploads/*.mov
+input/audio_files/
+processing/temp_transcripts/
+dist/
+*.mp3
+!web/static/**/*.mp3

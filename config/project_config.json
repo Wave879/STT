@@ -1,0 +1,74 @@
+{
+  "project": {
+    "name": "Organization STT Processing",
+    "description": "Multi-model STT processing and summarization workflow",
+    "created_date": "2024-03-29",
+    "version": "1.0"
+  },
+  "processing": {
+    "language": "Thai",
+    "alternate_languages": ["English"],
+    "auto_language_detect": true,
+    "region": "Southeast Asia"
+  },
+  "stt_models": {
+    "enabled_models": ["model1", "model2", "model3"],
+    "primary_model": "model1",
+    "parallel_processing": true,
+    "timeout_per_model": 300,
+    "retry_failed_segments": true,
+    "max_retries": 3
+  },
+  "analysis": {
+    "confidence_threshold": 0.85,
+    "min_confidence_for_correction": 0.80,
+    "enable_context_aware_correction": true,
+    "enable_speaker_identification": false,
+    "enable_emotion_detection": false
+  },
+  "output": {
+    "formats": ["markdown", "docx", "pdf"],
+    "default_format": "markdown",
+    "include_timestamps": true,
+    "timestamp_interval_seconds": 5,
+    "include_metadata": true,
+    "include_confidence_scores": true
+  },
+  "summarization": {
+    "enable_auto_summary": true,
+    "summary_length": "medium",
+    "extract_action_items": true,
+    "extract_key_decisions": true,
+    "language_summary": "Thai"
+  },
+  "quality": {
+    "enable_quality_check": true,
+    "minimum_accuracy": 0.90,
+    "flag_uncertain_segments": true,
+    "uncertainty_threshold": 0.75
+  },
+  "logging": {
+    "enable_logging": true,
+    "log_level": "info",
+    "log_format": "json",
+    "archive_logs": true,
+    "retention_days": 90
+  },
+  "security": {
+    "encrypt_output": false,
+    "encryption_algorithm": "AES-256",
+    "require_authentication": false,
+    "audit_logging": true
+  },
+  "performance": {
+    "enable_batch_processing": true,
+    "max_concurrent_files": 5,
+    "use_gpu_acceleration": false,
+    "memory_limit_gb": 8
+  },
+  "notifications": {
+    "notify_on_completion": true,
+    "notify_on_error": true,
+    "notification_method": "log"
+  }
+}

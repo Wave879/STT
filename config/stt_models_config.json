@@ -1,0 +1,112 @@
+{
+  "stt_engines": [
+    {
+      "id": "model1",
+      "name": "Microsoft Azure Speech Services",
+      "provider": "azure",
+      "enabled": true,
+      "priority": 1,
+      "api_key": "AZURE_SPEECH_KEY",
+      "region": "southeastasia",
+      "endpoint": "https://southeastasia.tts.speech.microsoft.com/",
+      "configuration": {
+        "language": "th-TH",
+        "region": "southeastasia",
+        "audio_format": "auto",
+        "sample_rate": 16000,
+        "bit_depth": 16,
+        "confidence_threshold": 0.85,
+        "timeout": 300
+      },
+      "performance": {
+        "accuracy": "91%",
+        "speed": "realtime",
+        "supported_languages": ["Thai", "English"]
+      }
+    },
+    {
+      "id": "model2",
+      "name": "External Whisper API (Docker)",
+      "provider": "external",
+      "enabled": true,
+      "priority": 2,
+      "api_key": "none",
+      "endpoint": "http://192.168.10.19:8100/v1/media/transcribe",
+      "configuration": {
+        "server_ip": "192.168.10.19",
+        "port": "8100",
+        "language": "th",
+        "include_speaker_labels": true,
+        "audio_format": "auto",
+        "sample_rate": 16000,
+        "bit_depth": 16,
+        "confidence_threshold": 0.82,
+        "timeout": 300
+      },
+      "performance": {
+        "accuracy": "88%",
+        "speed": "fast",
+        "supported_languages": ["Thai", "English", "Multilingual"]
+      }
+    },
+    {
+      "id": "model3",
+      "name": "MAI Transcribe API (REST)",
+      "provider": "mai",
+      "enabled": true,
+      "priority": 3,
+      "api_key": "MAI_SPEECH_KEY",
+      "endpoint": "",
+      "configuration": {
+        "endpoint": "https://mai-speech.cognitiveservices.azure.com/",
+        "language": "th-TH",
+        "api_version": "2025-10-15",
+        "enhanced_mode": true,
+        "task": "transcribe",
+        "audio_format": "auto",
+        "sample_rate": 16000,
+        "bit_depth": 16,
+        "confidence_threshold": 0.86,
+        "timeout": 300
+      },
+      "performance": {
+        "accuracy": "93%",
+        "speed": "realtime",
+        "supported_languages": ["Thai", "English"]
+      }
+    }
+  ],
+  "audio_processing": {
+    "pre_processing": {
+      "normalize_volume": true,
+      "remove_silence": true,
+      "noise_reduction": true,
+      "compression": "moderate"
+    },
+    "supported_formats": {
+      "input": ["mp3", "wav", "m4a", "flac", "ogg", "webm"],
+      "sample_rates": [8000, 16000, 44100, 48000],
+      "channels": [1, 2],
+      "bit_depths": [16, 32]
+    }
+  },
+  "result_merging": {
+    "strategy": "weighted_consensus",
+    "weights": {
+      "model1": 0.50,
+      "model2": 0.30,
+      "model3": 0.20
+    },
+    "voting_threshold": 0.66,
+    "confidence_calculation": "weighted_average"
+  },
+  "error_handling": {
+    "retry_policy": {
+      "enabled": true,
+      "max_retries": 3,
+      "backoff_strategy": "exponential",
+      "initial_delay_ms": 1000,
+      "max_delay_ms": 30000
+    }
+  }
+}

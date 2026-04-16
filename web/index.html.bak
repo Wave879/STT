@@ -1,0 +1,311 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Audio AI | COWORK System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/wavesurfer.js@7"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Anuphan', sans-serif; background-color: #f1f5f9; }
+        .glass-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); }
+        .gradient-primary { background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%); }
+        .gradient-orange { background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); }
+        @keyframes pulse-border { 0% { border-color: #e2e8f0; } 50% { border-color: #6366f1; } 100% { border-color: #e2e8f0; } }
+        .clickable-word { cursor: pointer; padding: 2px 4px; border-radius: 4px; transition: all 0.2s; }
+        .clickable-word:hover { background-color: #e0e7ff; color: #4338ca; text-decoration: underline; }
+        .word-active { background-color: #4338ca; color: white !important; }
+        #waveform-container { width: 100%; height: 120px; background: #f8fafc; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <nav class="sticky top-0 z-50 bg-white border-b border-slate-200 px-6 py-3">
+        <div class="max-w-[1600px] mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center text-white shadow-lg">
+                    <i class="fas fa-microchip text-xl"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-bold tracking-tight text-slate-900">COWORK <span class="text-indigo-600">AudioAI</span></span>
+                    <p class="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Enterprise Intelligence Platform</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-6 text-sm font-semibold text-slate-500">
+                <div class="hidden lg:flex gap-6">
+                    <a href="#" class="text-indigo-600">เนเธเธเธเธงเธเธเธธเธก</a>
+                    <a href="#" class="hover:text-indigo-600 transition">เธเธฅเธฑเธเธเนเธญเธกเธนเธฅเน€เธชเธตเธขเธ</a>
+                </div>
+                <div class="h-8 w-[1px] bg-slate-200 mx-2"></div>
+                <div class="flex items-center gap-3">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-xs font-bold">Admin Manager</p>
+                        <p class="text-[10px] text-green-500 flex items-center justify-end gap-1">
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> เธฃเธฐเธเธเธญเธญเธเนเธฅเธเน
+                        </p>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-[1600px] mx-auto p-6 lg:p-10">
+        <div class="grid grid-cols-12 gap-8">
+
+            <!-- Side Control Panel -->
+            <div class="col-span-12 lg:col-span-3 space-y-6">
+                <section class="glass-card rounded-2xl p-6">
+                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">1. เธเธณเน€เธเนเธฒเนเธเธฅเนเน€เธชเธตเธขเธ</h2>
+                    <div class="relative group">
+                        <div id="drop-zone" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50 group-hover:bg-indigo-50/50 group-hover:border-indigo-300 transition duration-300">
+                            <i class="fas fa-file-waveform text-4xl text-slate-300 group-hover:text-indigo-400 mb-4 transition"></i>
+                            <p class="text-sm font-bold text-slate-600">sound.mp3</p>
+                            <p class="text-[10px] text-green-500 font-bold mt-1 uppercase">File Ready</p>
+                        </div>
+                    </div>
+                    <button id="main-action-btn" class="w-full mt-6 py-4 gradient-primary text-white rounded-xl font-bold shadow-xl shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all">
+                        เธเธฃเธฐเธกเธงเธฅเธเธฅเธ—เธฑเธเธ—เธต
+                    </button>
+                </section>
+
+                <section class="glass-card rounded-2xl p-6">
+                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">เธเธงเธฒเธกเธเนเธฒเธงเธซเธเนเธฒ</h2>
+                    <div class="space-y-6 relative">
+                        <div class="absolute left-[15px] top-2 bottom-2 w-0.5 bg-slate-100"></div>
+                        <div id="step-1" class="flex items-center gap-4 relative z-10">
+                            <div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-xs"><i class="fas fa-check"></i></div>
+                            <p class="text-xs font-bold">เธฃเธฑเธเนเธเธฅเนเน€เธชเธตเธขเธ</p>
+                        </div>
+                        <div id="step-2" class="flex items-center gap-4 relative z-10 opacity-40">
+                            <div id="dot-2" class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs">2</div>
+                            <p class="text-xs font-bold">Clean Noise</p>
+                        </div>
+                        <div id="step-3" class="flex items-center gap-4 relative z-10 opacity-40">
+                            <div id="dot-3" class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs">3</div>
+                            <p class="text-xs font-bold">STT Engines</p>
+                        </div>
+                        <div id="step-4" class="flex items-center gap-4 relative z-10 opacity-40">
+                            <div id="dot-4" class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs">4</div>
+                            <p class="text-xs font-bold">Final Consensus</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Main Results Display -->
+            <div class="col-span-12 lg:col-span-9 space-y-6">
+
+                <!-- Audio Visualizer -->
+                <section class="glass-card rounded-2xl p-6 shadow-sm border-t-4 border-t-indigo-500">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-sm font-bold text-slate-600 flex items-center gap-2">
+                            <i class="fas fa-chart-line text-indigo-500"></i> เธ•เธฑเธงเน€เธฅเนเธเน€เธชเธตเธขเธเนเธฅเธฐเธเธฃเธฒเธเธงเธดเน€เธเธฃเธฒเธฐเธซเน (Audio Visualizer)
+                        </h2>
+                        <div class="flex gap-2 items-center">
+                            <span id="current-time" class="text-xs font-mono text-slate-400">00:00</span>
+                            <div class="h-4 w-[1px] bg-slate-200 mx-1"></div>
+                            <button id="play-pause-btn" class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition">
+                                <i class="fas fa-play text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="waveform-container"></div>
+                </section>
+
+                <!-- STT Results -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-card rounded-2xl p-5 border-l-4 border-l-blue-500">
+                        <div class="flex justify-between mb-4">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Azure STT</span>
+                            <i class="fas fa-check-circle text-blue-500 text-xs"></i>
+                        </div>
+                        <div id="out-azure" class="text-xs text-slate-500 leading-relaxed min-h-[100px]">เธฃเธญเธเธฃเธฐเธกเธงเธฅเธเธฅ...</div>
+                    </div>
+                    <div class="glass-card rounded-2xl p-5 border-l-4 border-l-emerald-500">
+                        <div class="flex justify-between mb-4">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">OpenAI Whisper</span>
+                            <i class="fas fa-check-circle text-emerald-500 text-xs"></i>
+                        </div>
+                        <div id="out-whisper" class="text-xs text-slate-500 leading-relaxed min-h-[100px]">เธฃเธญเธเธฃเธฐเธกเธงเธฅเธเธฅ...</div>
+                    </div>
+                    <div class="glass-card rounded-2xl p-5 border-l-4 border-l-orange-500">
+                        <div class="flex justify-between mb-4">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">MAI Transcribe</span>
+                            <i class="fas fa-check-circle text-orange-500 text-xs"></i>
+                        </div>
+                        <div id="out-mai" class="text-xs text-slate-500 leading-relaxed min-h-[100px]">เธฃเธญเธเธฃเธฐเธกเธงเธฅเธเธฅ...</div>
+                    </div>
+                </div>
+
+                <!-- Final Text Output -->
+                <section class="glass-card rounded-3xl overflow-hidden shadow-xl border-indigo-100">
+                    <div class="bg-indigo-600 px-8 py-4 flex justify-between items-center text-white">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-file-signature"></i>
+                            <h2 class="font-bold">sound_final.txt</h2>
+                        </div>
+                        <button class="bg-white/20 hover:bg-white hover:text-indigo-600 px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                            เธเธฑเธเธ—เธถเธเธเธฅเธฅเธฑเธเธเน
+                        </button>
+                    </div>
+                    <div class="p-8 bg-white">
+                        <div id="final-text-display" class="text-lg text-slate-700 leading-loose min-h-[120px] font-medium">
+                            <span class="text-slate-300 italic">เน€เธฃเธดเนเธกเธ•เนเธเธเธฒเธฃเธ—เธณเธเธฒเธเน€เธเธทเนเธญเธชเธฃเธธเธเธเนเธญเธเธงเธฒเธกเธ—เธตเนเธ–เธนเธเธ•เนเธญเธเธ—เธตเนเธชเธธเธ”...</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Summary Step 5 -->
+                <section class="glass-card rounded-3xl p-8 border-t-4 border-t-orange-500 shadow-xl overflow-hidden relative">
+                    <div class="absolute -right-16 -top-16 w-48 h-48 bg-orange-50 rounded-full blur-3xl opacity-50"></div>
+                    <div class="flex items-center gap-4 mb-6 relative z-10">
+                        <div class="w-12 h-12 gradient-orange rounded-2xl flex items-center justify-center shadow-lg shadow-orange-200 text-white">
+                            <i class="fas fa-wand-magic-sparkles text-2xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">เธเธ—เธชเธฃเธธเธเธญเธฑเธเธเธฃเธดเธขเธฐ (Step 5)</h2>
+                            <p class="text-slate-400 text-sm">เธเนเธญเธกเธนเธฅเน€เธเธดเธเธฅเธถเธเธเธฒเธเธเธฒเธฃเธเธฑเธ”เธเธฃเธญเธเธ—เธธเธเนเธกเน€เธ”เธฅ</p>
+                        </div>
+                    </div>
+                    <div id="summary-area" class="relative z-10 text-slate-600">
+                        <div class="flex items-center gap-3 p-4 bg-orange-50 rounded-xl border border-orange-100 italic">
+                            <i class="fas fa-spinner fa-spin text-orange-400"></i>
+                            <span>เธฃเธญเธชเธฃเธธเธเน€เธเธทเนเธญเธซเธฒเธเธฒเธเธเธฒเธฃเน€เธเธฃเธตเธขเธเน€เธ—เธตเธขเธ...</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const wavesurfer = WaveSurfer.create({
+            container: '#waveform-container',
+            waveColor: '#cbd5e1',
+            progressColor: '#f97316',
+            cursorColor: '#ea580c',
+            barWidth: 3,
+            barRadius: 3,
+            responsive: true,
+            height: 120,
+            normalize: true,
+        });
+        wavesurfer.load('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+
+        const runBtn = document.getElementById('main-action-btn');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const timeDisplay = document.getElementById('current-time');
+        const outAz = document.getElementById('out-azure');
+        const outWp = document.getElementById('out-whisper');
+        const outMai = document.getElementById('out-mai');
+        const finalText = document.getElementById('final-text-display');
+        const summaryArea = document.getElementById('summary-area');
+
+        playPauseBtn.addEventListener('click', () => {
+            wavesurfer.playPause();
+            const icon = playPauseBtn.querySelector('i');
+            icon.className = wavesurfer.isPlaying() ? 'fas fa-pause text-xs' : 'fas fa-play text-xs';
+        });
+
+        wavesurfer.on('timeupdate', (time) => {
+            const mins = Math.floor(time / 60).toString().padStart(2, '0');
+            const secs = Math.floor(time % 60).toString().padStart(2, '0');
+            timeDisplay.innerText = `${mins}:${secs}`;
+            highlightWordsAtTime(time);
+        });
+
+        const mockSTT = [
+            { word: "เธชเธงเธฑเธชเธ”เธตเธเธฃเธฑเธ", start: 1, end: 1.5 },
+            { word: "เธงเธฑเธเธเธตเนเน€เธฃเธฒ", start: 1.6, end: 2.2 },
+            { word: "เธญเธขเธนเนเธ—เธตเน", start: 2.3, end: 2.8 },
+            { word: "Co-work", start: 2.9, end: 3.5 },
+            { word: "เน€เธเธทเนเธญเธ—เธ”เธชเธญเธ", start: 3.6, end: 4.5 },
+            { word: "เธฃเธฐเธเธ", start: 4.6, end: 5.0 },
+            { word: "เธ–เธญเธ”เธเธงเธฒเธก", start: 5.1, end: 5.8 },
+            { word: "เธ เธฒเธฉเธฒเนเธ—เธข", start: 5.9, end: 6.8 },
+            { word: "เธญเธฑเธเธเธฃเธดเธขเธฐเธเธฃเธฑเธ", start: 6.9, end: 8.0 }
+        ];
+
+        runBtn.addEventListener('click', () => {
+            runBtn.disabled = true;
+            runBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> เธเธณเธฅเธฑเธเธฃเธฑเธ Workflow...';
+            setTimeout(() => {
+                updateProgress(2, "Noise Cleaned");
+                setTimeout(() => {
+                    updateProgress(3, "STT Complete");
+                    renderClickableText(outAz, mockSTT);
+                    renderClickableText(outWp, mockSTT);
+                    renderClickableText(outMai, mockSTT);
+                    setTimeout(() => {
+                        updateProgress(4, "Consensus OK");
+                        renderClickableText(finalText, mockSTT, true);
+                        summaryArea.innerHTML = `
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="p-6 bg-orange-50/50 rounded-2xl border border-orange-100 transition hover:bg-orange-50">
+                                    <h3 class="text-orange-600 font-bold mb-3 flex items-center gap-2">
+                                        <i class="fas fa-compass"></i> เธงเธฑเธ•เธ–เธธเธเธฃเธฐเธชเธเธเนเธซเธฅเธฑเธ
+                                    </h3>
+                                    <p class="text-slate-700 text-sm leading-relaxed">
+                                        เธกเธธเนเธเน€เธเนเธเธเธฒเธฃเธชเธฃเนเธฒเธเธเธฅเธฅเธฑเธเธเนเธเธฒเธฃเธเธฃเธฐเธเธธเธกเธ—เธตเนเนเธกเนเธเธขเธณเธ—เธตเนเธชเธธเธ”เธเนเธฒเธเธเธฒเธฃเธ—เธณ Cross-checking เธฃเธฐเธซเธงเนเธฒเธเนเธกเน€เธ”เธฅเธฃเธฐเธ”เธฑเธเธชเธฒเธเธฅเนเธฅเธฐเนเธกเน€เธ”เธฅเธ—เนเธญเธเธ–เธดเนเธ เน€เธเธทเนเธญเธฅเธ”เนเธญเธเธฒเธชเน€เธเธดเธ”เธเธณเธเธดเธ”
+                                    </p>
+                                </div>
+                                <div class="p-6 bg-orange-50/50 rounded-2xl border border-orange-100 transition hover:bg-orange-50">
+                                    <h3 class="text-orange-600 font-bold mb-3 flex items-center gap-2">
+                                        <i class="fas fa-tasks"></i> เธเธฃเธฐเน€เธ”เนเธเธชเธณเธเธฑเธ & เธชเธฃเธธเธ
+                                    </h3>
+                                    <ul class="text-sm text-slate-700 space-y-2">
+                                        <li class="flex gap-2 items-start"><i class="fas fa-check-circle text-orange-500 mt-1"></i> เธเธชเธฒเธเธเธฅเธฑเธ Azure, Whisper เนเธฅเธฐ MAI</li>
+                                        <li class="flex gap-2 items-start"><i class="fas fa-check-circle text-orange-500 mt-1"></i> เธฃเธฐเธเธ Clean Noise เธ—เธณเธเธฒเธเนเธ”เนเธขเธญเธ”เน€เธขเธตเนเธขเธก</li>
+                                        <li class="flex gap-2 items-start"><i class="fas fa-check-circle text-orange-500 mt-1"></i> เนเธ”เนเนเธเธฅเน sound_final.txt เธ—เธตเนเธชเธกเธเธนเธฃเธ“เน</li>
+                                    </ul>
+                                </div>
+                            </div>`;
+                        runBtn.disabled = false;
+                        runBtn.innerHTML = 'เน€เธฃเธดเนเธกเธเธฒเธเนเธซเธกเน';
+                    }, 1000);
+                }, 1500);
+            }, 1000);
+        });
+
+        function renderClickableText(container, data, isFinal = false) {
+            container.innerHTML = '';
+            data.forEach((item) => {
+                const span = document.createElement('span');
+                span.innerText = item.word + " ";
+                span.className = isFinal ? "clickable-word text-slate-800" : "clickable-word";
+                span.dataset.start = item.start;
+                span.onclick = () => {
+                    wavesurfer.setTime(parseFloat(item.start));
+                    wavesurfer.play();
+                    playPauseBtn.querySelector('i').className = 'fas fa-pause text-xs';
+                };
+                container.appendChild(span);
+            });
+        }
+
+        function highlightWordsAtTime(currentTime) {
+            document.querySelectorAll('.clickable-word').forEach(word => {
+                const start = parseFloat(word.dataset.start);
+                if (currentTime >= start && currentTime < start + 0.8) {
+                    word.classList.add('word-active');
+                } else {
+                    word.classList.remove('word-active');
+                }
+            });
+        }
+
+        function updateProgress(step) {
+            const row = document.getElementById(`step-${step}`);
+            const dot = document.getElementById(`dot-${step}`);
+            row.style.opacity = "1";
+            dot.className = "w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-xs";
+            dot.innerHTML = '<i class="fas fa-check"></i>';
+        }
+    </script>
+</body>
+</html>

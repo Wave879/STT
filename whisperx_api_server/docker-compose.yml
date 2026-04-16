@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  whisperx-api:
+    build: .
+    container_name: whisperx-api
+    ports:
+      - "5772:5772"
+    environment:
+      - PORT=5772
+      - TIMEOUT_SECONDS=1200
+      - DEFAULT_MODEL=small
+      - DEVICE=cuda
+      - COMPUTE_TYPE=float16
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+      - DEBUG=false
+      - TEMP_DIR=/tmp/whisperx
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ./cache:/root/.cache
+      - ./tmp:/tmp/whisperx
+    restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: whisperx-cloudflared
+    restart: unless-stopped
+    depends_on:
+      - whisperx-api
+    command: tunnel --no-autoupdate --url http://whisperx-api:5772
+    network_mode: "service:whisperx-api"

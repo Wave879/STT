@@ -1,0 +1,567 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Audio AI | COWORK System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- WaveSurfer.js for professional waveform -->
+    <script src="https://unpkg.com/wavesurfer.js@7"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Anuphan', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        .gradient-primary {
+            background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%);
+        }
+
+        .gradient-orange {
+            background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+        }
+
+        .step-processing { animation: pulse-border 2s infinite; }
+        
+        @keyframes pulse-border {
+            0% { border-color: #e2e8f0; }
+            50% { border-color: #6366f1; }
+            100% { border-color: #e2e8f0; }
+        }
+
+        .clickable-word {
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .clickable-word:hover {
+            background-color: #e0e7ff;
+            color: #4338ca;
+            text-decoration: underline;
+        }
+        .word-active {
+            background-color: #4338ca;
+            color: white !important;
+        }
+
+        #waveform-container {
+            width: 100%;
+            height: 120px;
+            background: #f8fafc;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Top Navigation Bar -->
+    <nav class="sticky top-0 z-50 bg-white border-b border-slate-200 px-6 py-3">
+        <div class="max-w-[1600px] mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center text-white shadow-lg">
+                    <i class="fas fa-microchip text-xl"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-bold tracking-tight text-slate-900">COWORK <span class="text-indigo-600">AudioAI</span></span>
+                    <p class="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Enterprise Intelligence Platform</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-6 text-sm font-semibold text-slate-500">
+                <div class="hidden lg:flex gap-6">
+                    <a href="#" class="text-indigo-600">แผงควบคุม</a>
+                    <a href="#" class="hover:text-indigo-600 transition">คลังข้อมูลเสียง</a>
+                </div>
+                <div class="h-8 w-[1px] bg-slate-200 mx-2"></div>
+                <div class="flex items-center gap-3">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-xs font-bold">Admin Manager</p>
+                        <p class="text-[10px] text-green-500 flex items-center justify-end gap-1">
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> ระบบออนไลน์
+                        </p>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-[1600px] mx-auto p-6 lg:p-10">
+        
+        <div class="grid grid-cols-12 gap-8">
+            
+            <!-- Side Control Panel -->
+            <div class="col-span-12 lg:col-span-3 space-y-6">
+                <section class="glass-card rounded-2xl p-6">
+                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">1. นำเข้าไฟล์เสียง</h2>
+                    <div class="relative group">
+                        <div id="drop-zone" class="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50 group-hover:bg-indigo-50/50 group-hover:border-indigo-300 transition duration-300">
+                            <i class="fas fa-file-waveform text-4xl text-slate-300 group-hover:text-indigo-400 mb-4 transition"></i>
+                            <p class="text-sm font-bold text-slate-600">sound.mp3</p>
+                            <p class="text-[10px] text-green-500 font-bold mt-1 uppercase">File Ready</p>
+                        </div>
+                    </div>
+                    <button id="main-action-btn" class="w-full mt-6 py-4 gradient-primary text-white rounded-xl font-bold shadow-xl shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100" disabled>
+                        ประมวลผลทันที
+                    </button>
+                </section>
+
+                <section class="glass-card rounded-2xl p-6">
+                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">ความก้าวหน้า</h2>
+                    <div class="space-y-6 relative">
+                        <div class="absolute left-[15px] top-2 bottom-2 w-0.5 bg-slate-100"></div>
+                        <div id="step-1" class="flex items-center gap-4 relative z-10">
+                            <div id="dot-1" class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-xs"><i class="fas fa-check"></i></div>
+                            <p class="text-xs font-bold">รับไฟล์เสียง</p>
+                        </div>
+                        <div id="step-2" class="flex items-center gap-4 relative z-10 opacity-40">
+                            <div id="dot-2" class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs">2</div>
+                            <div>
+                                <p class="text-xs font-bold">ถอดความ</p>
+                                <p id="step-2-engine" class="text-[10px] text-slate-400">Azure → MAI fallback</p>
+                            </div>
+                        </div>
+                        <div id="step-3" class="flex items-center gap-4 relative z-10 opacity-40">
+                            <div id="dot-3" class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs">3</div>
+                            <p class="text-xs font-bold">สรุปเนื้อหา</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Main Results Display -->
+            <div class="col-span-12 lg:col-span-9 space-y-6">
+                
+                <!-- Audio Visualizer Section -->
+                <section class="glass-card rounded-2xl p-6 shadow-sm border-t-4 border-t-indigo-500">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-sm font-bold text-slate-600 flex items-center gap-2">
+                            <i class="fas fa-chart-line text-indigo-500"></i> ตัวเล่นเสียงและกราฟวิเคราะห์ (Audio Visualizer)
+                        </h2>
+                        <div class="flex gap-2 items-center">
+                            <span id="current-time" class="text-xs font-mono text-slate-400">00:00</span>
+                            <div class="h-4 w-[1px] bg-slate-200 mx-1"></div>
+                            <button id="play-pause-btn" class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition">
+                                <i class="fas fa-play text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="waveform-container"></div>
+                </section>
+
+                <!-- STT Result -->
+                <div class="glass-card rounded-2xl p-5 border-l-4 border-l-indigo-500">
+                    <div class="flex justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ผลการถอดความ</span>
+                            <span id="engine-badge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-600"></span>
+                        </div>
+                        <a id="download-btn" class="hidden text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer">
+                            <i class="fas fa-download mr-1"></i>ดาวน์โหลด
+                        </a>
+                    </div>
+                    <div id="out-transcript" class="text-sm text-slate-600 leading-relaxed min-h-[120px] whitespace-pre-wrap font-mono">รอประมวลผล...</div>
+                </div>
+
+                <!-- Final Text Output -->
+                <section class="glass-card rounded-3xl overflow-hidden shadow-xl border-indigo-100">
+                    <div class="bg-indigo-600 px-8 py-4 flex justify-between items-center text-white">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-file-signature"></i>
+                            <h2 class="font-bold">sound_final.txt</h2>
+                        </div>
+                        <button class="bg-white/20 hover:bg-white text-indigo-600 px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                            บันทึกผลลัพธ์
+                        </button>
+                    </div>
+                    <div class="p-8 bg-white">
+                        <div id="final-text-display" class="text-lg text-slate-700 leading-loose min-h-[120px] font-medium">
+                            <span class="text-slate-300 italic">เริ่มต้นการทำงานเพื่อสรุปข้อความที่ถูกต้องที่สุด...</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Final Summary (Step 5 - White & Orange Theme) -->
+                <section class="glass-card rounded-3xl p-8 border-t-4 border-t-orange-500 shadow-xl overflow-hidden relative">
+                    <!-- Subtle background decoration -->
+                    <div class="absolute -right-16 -top-16 w-48 h-48 bg-orange-50 rounded-full blur-3xl opacity-50"></div>
+                    
+                    <div class="flex items-center gap-4 mb-6 relative z-10">
+                        <div class="w-12 h-12 gradient-orange rounded-2xl flex items-center justify-center shadow-lg shadow-orange-200 text-white">
+                            <i class="fas fa-wand-magic-sparkles text-2xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">บทสรุปอัจฉริยะ (Step 3)</h2>
+                            <p class="text-slate-400 text-sm">ข้อมูลเชิงลึกจากการคัดกรองทุกโมเดล</p>
+                        </div>
+                    </div>
+
+                    <div id="summary-area" class="relative z-10 text-slate-600">
+                        <div class="flex items-center gap-3 p-4 bg-orange-50 rounded-xl border border-orange-100 italic">
+                            <i class="fas fa-spinner fa-spin text-orange-400"></i>
+                            <span>รอสรุปเนื้อหาจากการเปรียบเทียบ...</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        // CONFIG: Backend API URL
+        // ═══════════════════════════════════════════════════════════════
+        // For local development: use /api
+        // For Cloudflare deployment: set BACKEND_URL env var
+        const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? ''  // Use relative paths for local
+            : (window.BACKEND_URL || '');  // Use env var or current origin
+        
+        const apiBase = (path) => BACKEND_URL ? `${BACKEND_URL}${path}` : path;
+
+        // Global State
+        const state = {
+            jobId: null,
+            currentFile: null,
+            isProcessing: false,
+        };
+
+        // Initialize WaveSurfer
+        let wavesurfer;
+        try {
+            wavesurfer = WaveSurfer.create({
+                container: '#waveform-container',
+                waveColor: '#cbd5e1',
+                progressColor: '#f97316',
+                cursorColor: '#ea580c',
+                barWidth: 3,
+                barRadius: 3,
+                responsive: true,
+                height: 120,
+                normalize: true,
+                backend: 'WebAudio',
+            });
+
+            // Error handling
+            wavesurfer.on('error', (err) => {
+                console.warn('WaveSurfer error:', err);
+            });
+        } catch (e) {
+            console.error('WaveSurfer init failed:', e);
+            wavesurfer = null;
+        }
+
+        const runBtn = document.getElementById('main-action-btn');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const timeDisplay = document.getElementById('current-time');
+        const dropZone = document.getElementById('drop-zone');
+        
+        const outTranscript = document.getElementById('out-transcript');
+        const engineBadge = document.getElementById('engine-badge');
+        const downloadBtn = document.getElementById('download-btn');
+        const finalText = document.getElementById('final-text-display');
+        const summaryArea = document.getElementById('summary-area');
+
+        // === DROP ZONE / FILE UPLOAD ===
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.background = 'rgba(99, 102, 241, 0.1)';
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.background = '';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.background = '';
+            if (e.dataTransfer.files.length > 0) {
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+
+        dropZone.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'audio/*';
+            input.onchange = (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            };
+            input.click();
+        });
+
+        // === UPLOAD FILE ===
+        async function handleFileSelect(file) {
+            state.currentFile = file;
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const resp = await fetch(apiBase('/api/upload'), {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await resp.json();
+                state.jobId = data.job_id;
+                
+                dropZone.innerHTML = `
+                    <i class="fas fa-check-circle text-5xl text-green-500 mb-4 transition"></i>
+                    <p class="text-sm font-bold text-slate-800">${file.name}</p>
+                    <p class="text-[10px] text-green-500 font-bold mt-1 uppercase">อัพโหลดสำเร็จ ✓</p>
+                `;
+                runBtn.disabled = false;
+
+                // Load audio to WaveSurfer using local blob (no network delay)
+                if (wavesurfer) {
+                    try {
+                        const blobUrl = URL.createObjectURL(file);
+                        // For Cloudflare deployment, use relative path
+                        const audioUrl = BACKEND_URL ? apiBase(`/api/audio/${state.jobId}`) : blobUrl;
+                        wavesurfer.load(audioUrl);
+                    } catch (audioErr) {
+                        console.warn('WaveSurfer load error (non-critical):', audioErr);
+                        // Continue anyway
+                    }
+                }
+            } catch (err) {
+                console.error('Upload error:', err);
+                outAz.textContent = `❌ Upload failed: ${err.message}`;
+            }
+        }
+
+        // === PLAY / PAUSE ===
+        playPauseBtn.addEventListener('click', () => {
+            if (!wavesurfer) return;
+            wavesurfer.playPause();
+            const icon = playPauseBtn.querySelector('i');
+            icon.className = wavesurfer.isPlaying() ? 'fas fa-pause text-xs' : 'fas fa-play text-xs';
+        });
+
+        if (wavesurfer) {
+            wavesurfer.on('timeupdate', (time) => {
+                const mins = Math.floor(time / 60).toString().padStart(2, '0');
+                const secs = Math.floor(time % 60).toString().padStart(2, '0');
+                timeDisplay.innerText = `${mins}:${secs}`;
+                highlightWordsAtTime(time);
+            });
+        }
+
+        // === START PROCESSING ===
+        runBtn.addEventListener('click', async () => {
+            if (!state.jobId) {
+                alert('Please upload a file first');
+                return;
+            }
+
+            state.isProcessing = true;
+            runBtn.disabled = true;
+            runBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังรัน Workflow...';
+
+            try {
+                const startResp = await fetch(apiBase('/api/process'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ job_id: state.jobId }),
+                });
+
+                if (!startResp.ok) {
+                    throw new Error('Process start failed');
+                }
+
+                // Start polling
+                await pollStatus();
+            } catch (err) {
+                console.error('Process error:', err);
+                runBtn.disabled = false;
+                runBtn.innerHTML = 'เริ่มงานใหม่';
+                outAz.textContent = `❌ Error: ${err.message}`;
+                state.isProcessing = false;
+            }
+        });
+
+        // === POLLING STATUS ===
+        async function pollStatus() {
+            const maxAttempts = 300; // 5 min
+            let attempts = 0;
+
+            while (attempts < maxAttempts && state.isProcessing) {
+                try {
+                    const resp = await fetch(apiBase(`/api/status/${state.jobId}`));
+                    const job = await resp.json();
+
+                    console.log('Status:', job);
+
+                    // Update progress dots
+                    if (job.step) {
+                        updateProgressDots(job.step);
+                    }
+
+                    // Update STT transcript panel
+                    if (job.stt_text) {
+                        outTranscript.textContent = job.stt_text;
+                    }
+                    if (job.stt_engine) {
+                        engineBadge.textContent = job.stt_engine;
+                        engineBadge.classList.remove('hidden');
+                        const step2eng = document.getElementById('step-2-engine');
+                        if (step2eng) step2eng.textContent = job.stt_engine;
+                    }
+
+                    // Update summary
+                    if (job.summary) {
+                        summaryArea.innerHTML = `
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="p-6 bg-orange-50/50 rounded-2xl border border-orange-100 transition hover:bg-orange-50">
+                                    <h3 class="text-orange-600 font-bold mb-3 flex items-center gap-2">
+                                        <i class="fas fa-compass"></i> ผลสรุป
+                                    </h3>
+                                    <p class="text-slate-700 text-sm leading-relaxed">
+                                        ${job.summary.substring(0, 200)}...
+                                    </p>
+                                </div>
+                                <div class="p-6 bg-orange-50/50 rounded-2xl border border-orange-100 transition hover:bg-orange-50">
+                                    <h3 class="text-orange-600 font-bold mb-3 flex items-center gap-2">
+                                        <i class="fas fa-tasks"></i> สถานะ
+                                    </h3>
+                                    <ul class="text-sm text-slate-700 space-y-2">
+                                        <li class="flex gap-2 items-start"><i class="fas fa-check-circle text-orange-500 mt-1"></i> ${job.message}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Check if done
+                    if (job.status === 'done') {
+                        state.isProcessing = false;
+                        runBtn.disabled = false;
+                        runBtn.innerHTML = 'เริ่มงานใหม่';
+                        // show download button
+                        if (downloadBtn && state.jobId) {
+                            downloadBtn.classList.remove('hidden');
+                            downloadBtn.onclick = () => window.open(apiBase(`/api/download/${state.jobId}`));
+                        }
+                        // mark all steps done
+                        updateProgressDots(4);
+                        break;
+                    }
+
+                    if (job.status === 'error') {
+                        state.isProcessing = false;
+                        runBtn.disabled = false;
+                        runBtn.innerHTML = 'เริ่มงานใหม่';
+                        outAz.textContent = `❌ ${job.message}`;
+                        break;
+                    }
+
+                    // Wait 1 second before next poll
+                    await new Promise(r => setTimeout(r, 1000));
+                    attempts++;
+                } catch (err) {
+                    console.error('Poll error:', err);
+                    console.error('Error details:', err.toString());
+                    outAz.textContent = `❌ Error: ${err.message || err.toString()}`;
+                    state.isProcessing = false;
+                    runBtn.disabled = false;
+                    runBtn.innerHTML = 'เริ่มงานใหม่';
+                    break;
+                }
+            }
+        }
+
+        function updateProgressDots(currentStep) {
+            for (let i = 1; i <= 3; i++) {
+                const stepEl = document.getElementById(`step-${i}`);
+                const dotEl = document.getElementById(`dot-${i}`);
+                if (!stepEl || !dotEl) continue;
+                if (i < currentStep) {
+                    stepEl.style.opacity = '1';
+                    dotEl.className = 'w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-xs';
+                    dotEl.innerHTML = '<i class="fas fa-check"></i>';
+                } else if (i === currentStep) {
+                    stepEl.style.opacity = '1';
+                    dotEl.className = 'w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center text-xs step-processing';
+                    dotEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                } else {
+                    stepEl.style.opacity = '0.4';
+                    dotEl.className = 'w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs';
+                    dotEl.innerHTML = i;
+                }
+            }
+        }
+
+
+        function renderClickableText(container, text, isFinal = false) {
+            container.innerHTML = '';
+            if (!text) {
+                container.textContent = 'รอผลลัพธ์...';
+                return;
+            }
+
+            // Split text into words
+            const words = (text || '').split(/\s+/);
+            const wordDuration = 2.0 / Math.max(words.length, 1);
+
+            words.forEach((word, idx) => {
+                const span = document.createElement('span');
+                span.innerText = word + ' ';
+                span.className = isFinal ? 'clickable-word text-slate-800' : 'clickable-word';
+                span.dataset.start = idx * wordDuration;
+                
+                span.onclick = () => {
+                    if (wavesurfer && typeof wavesurfer.setTime === 'function') {
+                        try {
+                            wavesurfer.setTime(parseFloat(span.dataset.start));
+                            wavesurfer.play();
+                            const icon = playPauseBtn.querySelector('i');
+                            if (icon) icon.className = 'fas fa-pause text-xs';
+                        } catch (e) {
+                            console.warn('Playback error:', e);
+                        }
+                    }
+                };
+                
+                container.appendChild(span);
+            });
+        }
+
+        function highlightWordsAtTime(currentTime) {
+            if (!currentTime && currentTime !== 0) return;
+            const allWords = document.querySelectorAll('.clickable-word');
+            allWords.forEach(word => {
+                const start = parseFloat(word.dataset.start);
+                if (currentTime >= start && currentTime < start + 0.8) {
+                    word.classList.add('word-active');
+                } else {
+                    word.classList.remove('word-active');
+                }
+            });
+        }
+
+        function updateProgress(step, msg) {
+            const row = document.getElementById(`step-${step}`);
+            const dot = document.getElementById(`dot-${step}`);
+            row.style.opacity = "1";
+            dot.className = "w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-xs";
+            dot.innerHTML = '<i class="fas fa-check"></i>';
+        }
+    </script>
+</body>
+</html>

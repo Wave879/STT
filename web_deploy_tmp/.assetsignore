@@ -1,0 +1,8 @@
+uploads/
+*.wav
+*.mp3
+*.m4a
+*.flac
+README.md
+*.bak
+*.old

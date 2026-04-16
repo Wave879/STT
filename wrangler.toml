@@ -1,0 +1,23 @@
+# Cloudflare Pages Configuration
+name = "summary-to-team"
+main = "web/index.html"
+type = "javascript"
+
+# Build configuration (no build step needed)
+[build]
+command = "echo 'Static site - no build needed'"
+watch_paths = ["web/**/*"]
+
+# Pages configuration  
+[env.production]
+name = "summary-to-team-prod"
+
+# Redirect all API calls to backend server
+# Update BACKEND_URL to your actual backend URL
+# Example: https://your-render.onrender.com or https://your-app.fly.dev
+
+[build.upload]
+dir = "web"
+
+# Environment variables (set in CF dashboard)
+# BACKEND_URL = your backend URL

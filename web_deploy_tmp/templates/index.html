@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STT Final Summary - AI Transcription Dashboard</title>
+    <link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <span class="logo-icon">🎙️</span>
+                <span class="logo-text">STT Final Summary</span>
+            </div>
+            <div class="navbar-status">
+                <span class="status-indicator"></span>
+                <span class="status-text">System Ready</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">🚀 AI-Powered Speech-to-Text System</h1>
+            <p class="hero-subtitle">Multi-Model Transcription with Intelligent Comparison</p>
+            <div class="hero-badges">
+                <span class="badge">🤖 3 Models</span>
+                <span class="badge">🌐 Thai Support</span>
+                <span class="badge">⚡ Real-time</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Statistics Section -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🎵</div>
+                <div class="stat-content">
+                    <h4>Audio Formats</h4>
+                    <p>MP3, WAV, M4A, FLAC</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🤖</div>
+                <div class="stat-content">
+                    <h4>STT Models</h4>
+                    <p>Azure, Whisper, MAI</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💯</div>
+                <div class="stat-content">
+                    <h4>Accuracy</h4>
+                    <p>88-93% average</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚙️</div>
+                <div class="stat-content">
+                    <h4>Processing</h4>
+                    <p>Parallel & AI</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="main-grid">
+            <!-- Left Column -->
+            <div class="left-column">
+                <!-- System Status Card -->
+                <div class="card premium">
+                    <div class="card-header">
+                        <h3>📊 System Status</h3>
+                        <span class="badge-success">Active</span>
+                    </div>
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <span class="status-label">System State</span>
+                            <span class="status-value running">● Ready</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Version</span>
+                            <span class="status-value">v1.0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Mode</span>
+                            <span class="status-value">Production</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Language</span>
+                            <span class="status-value">🇹🇭 Thai</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STT Models Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🤖 STT Models</h3>
+                        <span class="badge-info">3 Active</span>
+                    </div>
+                    <div class="models-showcase">
+                        <div class="model-card">
+                            <div class="model-icon">🔵</div>
+                            <div class="model-info">
+                                <h4>Azure Speech</h4>
+                                <p>Microsoft</p>
+                            </div>
+                            <div class="model-accuracy">91%</div>
+                        </div>
+                        <div class="model-card">
+                            <div class="model-icon">🟢</div>
+                            <div class="model-info">
+                                <h4>Whisper</h4>
+                                <p>OpenAI/Docker</p>
+                            </div>
+                            <div class="model-accuracy">88%</div>
+                        </div>
+                        <div class="model-card">
+                            <div class="model-icon">🟡</div>
+                            <div class="model-info">
+                                <h4>MAI Transcribe</h4>
+                                <p>Azure Services</p>
+                            </div>
+                            <div class="model-accuracy">93%</div>
+                        </div>
+                    </div>
+                    <div class="ai-comparison">
+                        <span class="ai-badge">🧠</span>
+                        <span>AI Comparison: Azure OpenAI GPT-4o</span>
+                    </div>
+                </div>
+
+                <!-- Quick Start Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>⚡ Quick Start</h3>
+                    </div>
+                    <div class="quick-actions">
+                        <button class="action-btn" onclick="copyCommand('python run.py status')">
+                            <span class="btn-icon">📊</span>
+                            <span class="btn-text">Show Status</span>
+                        </button>
+                        <button class="action-btn" onclick="copyCommand('python run.py watch')">
+                            <span class="btn-icon">👁</span>
+                            <span class="btn-text">Watch Mode</span>
+                        </button>
+                        <button class="action-btn" onclick="copyCommand('python run.py process')">
+                            <span class="btn-icon">▶</span>
+                            <span class="btn-text">Process</span>
+                        </button>
+                        <button class="action-btn" onclick="copyCommand('python run.py batch')">
+                            <span class="btn-icon">📦</span>
+                            <span class="btn-text">Batch</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="right-column">
+                <!-- Features Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>✨ Features</h3>
+                    </div>
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <div>
+                                <strong>3 Parallel Models</strong>
+                                <p>Azure, Whisper, MAI processing simultaneously</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <div>
+                                <strong>AI-Based Comparison</strong>
+                                <p>Azure OpenAI selects the best transcript</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <div>
+                                <strong>Audio Enhancement</strong>
+                                <p>Noise reduction, normalization, clarity</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <div>
+                                <strong>Video Support</strong>
+                                <p>Auto-extract audio from MP4, AVI, MOV</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <div>
+                                <strong>Smart Summarization</strong>
+                                <p>AI-powered summary generation</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <div>
+                                <strong>Auto Processing</strong>
+                                <p>Watch folder and process files automatically</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Getting Started Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>🚀 Getting Started</h3>
+                    </div>
+                    <div class="steps-timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-number">1</div>
+                            <div class="timeline-content">
+                                <h4>Prepare Audio</h4>
+                                <p>Place MP3, WAV, or video files in <code>input/audio_files/</code></p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-number">2</div>
+                            <div class="timeline-content">
+                                <h4>Run Processor</h4>
+                                <p><code>python run.py watch</code> or <code>python run.py process file.mp3</code></p>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-number">3</div>
+                            <div class="timeline-content">
+                                <h4>Get Results</h4>
+                                <p>Find transcripts in <code>output/stt_final/</code> and summaries in <code>output/summaries/</code></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Supported Formats Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📁 Supported Formats</h3>
+                    </div>
+                    <div class="formats-showcase">
+                        <div class="format-group">
+                            <h5>🎵 Audio</h5>
+                            <div class="format-tags">
+                                <span class="format-tag">MP3</span>
+                                <span class="format-tag">WAV</span>
+                                <span class="format-tag">M4A</span>
+                                <span class="format-tag">FLAC</span>
+                                <span class="format-tag">OGG</span>
+                                <span class="format-tag">WebM</span>
+                            </div>
+                        </div>
+                        <div class="format-group">
+                            <h5>🎥 Video</h5>
+                            <div class="format-tags">
+                                <span class="format-tag">MP4</span>
+                                <span class="format-tag">AVI</span>
+                                <span class="format-tag">MOV</span>
+                                <span class="format-tag">MKV</span>
+                                <span class="format-tag">FLV</span>
+                                <span class="format-tag">WMV</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Links -->
+        <div class="documentation-section">
+            <h3>📚 Learn More</h3>
+            <div class="doc-links">
+                <a href="../docs/GETTING_STARTED.md" class="doc-link">
+                    <span class="doc-icon">🚀</span>
+                    <div>
+                        <h4>Quick Start</h4>
+                        <p>Get up and running in 5 minutes</p>
+                    </div>
+                </a>
+                <a href="../docs/TECHNICAL_GUIDE.md" class="doc-link">
+                    <span class="doc-icon">⚙️</span>
+                    <div>
+                        <h4>Technical Guide</h4>
+                        <p>Advanced configuration and setup</p>
+                    </div>
+                </a>
+                <a href="../docs/MOCK_MODE_GUIDE.md" class="doc-link">
+                    <span class="doc-icon">🧪</span>
+                    <div>
+                        <h4>Mock Mode</h4>
+                        <p>Testing without network connectivity</p>
+                    </div>
+                </a>
+                <a href="../docs/README.md" class="doc-link">
+                    <span class="doc-icon">📖</span>
+                    <div>
+                        <h4>Full Documentation</h4>
+                        <p>Complete system documentation</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Copy Notification -->
+        <div id="copy-notification" class="copy-notification">
+            <span class="notification-icon">✓</span>
+            <span class="notification-text">Copied to clipboard!</span>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2026 STT Final Summary - AI-Powered Transcription System</p>
+            <p>v1.0 | Open Source | <a href="#">Documentation</a> | <a href="#">GitHub</a></p>
+        </div>
+    </footer>
+
+    <script src="../static/app.js"></script>
+</body>
+</html>
+

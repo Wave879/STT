@@ -1,0 +1,450 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Audio AI | COWORK System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/wavesurfer.js@7"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Anuphan', sans-serif; background-color: #f1f5f9; }
+        .glass-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); }
+        .gradient-primary { background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%); }
+        .gradient-orange { background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); }
+        @keyframes pulse-border { 0% { border-color: #e2e8f0; } 50% { border-color: #6366f1; } 100% { border-color: #e2e8f0; } }
+        .clickable-word { cursor: pointer; padding: 2px 4px; border-radius: 4px; transition: all 0.2s; }
+        .clickable-word:hover { background-color: #e0e7ff; color: #4338ca; text-decoration: underline; }
+        .word-active { background-color: #4338ca; color: white !important; }
+        #waveform-container { width: 100%; height: 120px; background: #f8fafc; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <nav class="sticky top-0 z-50 bg-white border-b border-slate-200 px-6 py-3">
+        <div class="max-w-[1600px] mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center text-white shadow-lg">
+                    <i class="fas fa-microchip text-xl"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-bold tracking-tight text-slate-900">COWORK <span class="text-indigo-600">AudioAI</span></span>
+                    <p class="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Enterprise Intelligence Platform</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-6 text-sm font-semibold text-slate-500">
+                <div class="hidden lg:flex gap-6">
+                    <a href="#" class="text-indigo-600">แผงควบคุม</a>
+                    <a href="#" class="hover:text-indigo-600 transition">คลังข้อมูลเสียง</a>
+                </div>
+                <div class="h-8 w-[1px] bg-slate-200 mx-2"></div>
+                <div class="flex items-center gap-3">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-xs font-bold">Admin Manager</p>
+                        <p class="text-[10px] text-green-500 flex items-center justify-end gap-1">
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> ระบบออนไลน์
+                        </p>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-[1600px] mx-auto p-6 lg:p-10">
+        <div class="grid grid-cols-12 gap-8">
+
+            <!-- Side Control Panel -->
+            <div class="col-span-12 lg:col-span-3 space-y-6">
+                <section class="glass-card rounded-2xl p-6">
+                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">1. นำเข้าไฟล์เสียง</h2>
+                    <input type="file" id="file-input" accept="audio/*,video/mp4,video/quicktime" class="hidden">
+                    <div class="relative">
+                        <div id="drop-zone" class="cursor-pointer border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50 hover:bg-indigo-50/50 hover:border-indigo-300 transition duration-300">
+                            <i class="fas fa-file-waveform text-4xl text-slate-300 mb-4 transition"></i>
+                            <p class="text-sm font-bold text-slate-400">ลาก &amp; วาง หรือ คลิกเพื่อเลือกไฟล์</p>
+                            <p class="text-[10px] text-slate-400 mt-1">MP3 · WAV · M4A · FLAC · MP4</p>
+                        </div>
+                    </div>
+                    <button id="main-action-btn" class="w-full mt-6 py-4 gradient-primary text-white rounded-xl font-bold shadow-xl shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all">
+                        ประมวลผลทันที
+                    </button>
+                </section>
+
+                <section class="glass-card rounded-2xl p-6">
+                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">ความก้าวหน้า</h2>
+                    <div class="space-y-6 relative">
+                        <div class="absolute left-[15px] top-2 bottom-2 w-0.5 bg-slate-100"></div>
+                        <div id="step-1" class="flex items-center gap-4 relative z-10">
+                            <div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-xs"><i class="fas fa-check"></i></div>
+                            <p class="text-xs font-bold">รับไฟล์เสียง</p>
+                        </div>
+                        <div id="step-2" class="flex items-center gap-4 relative z-10 opacity-40">
+                            <div id="dot-2" class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs">2</div>
+                            <p class="text-xs font-bold">Clean Noise</p>
+                        </div>
+                        <div id="step-3" class="flex items-center gap-4 relative z-10 opacity-40">
+                            <div id="dot-3" class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs">3</div>
+                            <p class="text-xs font-bold">STT Engines</p>
+                        </div>
+                        <div id="step-4" class="flex items-center gap-4 relative z-10 opacity-40">
+                            <div id="dot-4" class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs">4</div>
+                            <p class="text-xs font-bold">Final Consensus</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Main Results Display -->
+            <div class="col-span-12 lg:col-span-9 space-y-6">
+
+                <!-- Audio Visualizer -->
+                <section class="glass-card rounded-2xl p-6 shadow-sm border-t-4 border-t-indigo-500">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-sm font-bold text-slate-600 flex items-center gap-2">
+                            <i class="fas fa-chart-line text-indigo-500"></i> ตัวเล่นเสียงและกราฟวิเคราะห์ (Audio Visualizer)
+                        </h2>
+                        <div class="flex gap-2 items-center">
+                            <span id="current-time" class="text-xs font-mono text-slate-400">00:00</span>
+                            <div class="h-4 w-[1px] bg-slate-200 mx-1"></div>
+                            <button id="play-pause-btn" class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition">
+                                <i class="fas fa-play text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="waveform-container"></div>
+                </section>
+
+                <!-- STT Results -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-card rounded-2xl p-5 border-l-4 border-l-blue-500">
+                        <div class="flex justify-between mb-4">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Azure STT</span>
+                            <i class="fas fa-check-circle text-blue-500 text-xs"></i>
+                        </div>
+                        <div id="out-azure" class="text-xs text-slate-500 leading-relaxed min-h-[100px]">รอประมวลผล...</div>
+                    </div>
+                    <div class="glass-card rounded-2xl p-5 border-l-4 border-l-emerald-500">
+                        <div class="flex justify-between mb-4">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">OpenAI Whisper</span>
+                            <i class="fas fa-check-circle text-emerald-500 text-xs"></i>
+                        </div>
+                        <div id="out-whisper" class="text-xs text-slate-500 leading-relaxed min-h-[100px]">รอประมวลผล...</div>
+                    </div>
+                    <div class="glass-card rounded-2xl p-5 border-l-4 border-l-orange-500">
+                        <div class="flex justify-between mb-4">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">MAI Transcribe</span>
+                            <i class="fas fa-check-circle text-orange-500 text-xs"></i>
+                        </div>
+                        <div id="out-mai" class="text-xs text-slate-500 leading-relaxed min-h-[100px]">รอประมวลผล...</div>
+                    </div>
+                </div>
+
+                <!-- Final Text Output -->
+                <section class="glass-card rounded-3xl overflow-hidden shadow-xl border-indigo-100">
+                    <div class="bg-indigo-600 px-8 py-4 flex justify-between items-center text-white">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-file-signature"></i>
+                            <h2 class="font-bold">sound_final.txt</h2>
+                        </div>
+                        <button id="download-btn" disabled class="bg-white/20 hover:bg-white hover:text-indigo-600 px-4 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-40 disabled:cursor-not-allowed">
+                            บันทึกผลลัพธ์
+                        </button>
+                    </div>
+                    <div class="p-8 bg-white">
+                        <div id="final-text-display" class="text-lg text-slate-700 leading-loose min-h-[120px] font-medium">
+                            <span class="text-slate-300 italic">เริ่มต้นการทำงานเพื่อสรุปข้อความที่ถูกต้องที่สุด...</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Summary Step 5 -->
+                <section class="glass-card rounded-3xl p-8 border-t-4 border-t-orange-500 shadow-xl overflow-hidden relative">
+                    <div class="absolute -right-16 -top-16 w-48 h-48 bg-orange-50 rounded-full blur-3xl opacity-50"></div>
+                    <div class="flex items-center gap-4 mb-6 relative z-10">
+                        <div class="w-12 h-12 gradient-orange rounded-2xl flex items-center justify-center shadow-lg shadow-orange-200 text-white">
+                            <i class="fas fa-wand-magic-sparkles text-2xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">บทสรุปอัจฉริยะ (Step 5)</h2>
+                            <p class="text-slate-400 text-sm">ข้อมูลเชิงลึกจากการคัดกรองทุกโมเดล</p>
+                        </div>
+                    </div>
+                    <div id="summary-area" class="relative z-10 text-slate-600">
+                        <div class="flex items-center gap-3 p-4 bg-orange-50 rounded-xl border border-orange-100 italic">
+                            <i class="fas fa-spinner fa-spin text-orange-400"></i>
+                            <span>รอสรุปเนื้อหาจากการเปรียบเทียบ...</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ── WaveSurfer ────────────────────────────────────────────────
+        const wavesurfer = WaveSurfer.create({
+            container: '#waveform-container',
+            waveColor: '#cbd5e1',
+            progressColor: '#f97316',
+            cursorColor: '#ea580c',
+            barWidth: 3,
+            barRadius: 3,
+            height: 120,
+            normalize: true,
+        });
+
+        // ── DOM refs ──────────────────────────────────────────────────
+        const runBtn     = document.getElementById('main-action-btn');
+        const playBtn    = document.getElementById('play-pause-btn');
+        const timeDisp   = document.getElementById('current-time');
+        const outAz      = document.getElementById('out-azure');
+        const outWp      = document.getElementById('out-whisper');
+        const outMai     = document.getElementById('out-mai');
+        const finalTxt   = document.getElementById('final-text-display');
+        const sumArea    = document.getElementById('summary-area');
+        const dropZone   = document.getElementById('drop-zone');
+        const fileInput  = document.getElementById('file-input');
+        const dlBtn      = document.getElementById('download-btn');
+
+        // ── State ─────────────────────────────────────────────────────
+        let currentJobId  = null;
+        let pollTimer     = null;
+        let uploadedFile  = null;
+
+        // ── WaveSurfer controls ───────────────────────────────────────
+        playBtn.addEventListener('click', () => {
+            wavesurfer.playPause();
+            playBtn.querySelector('i').className = wavesurfer.isPlaying()
+                ? 'fas fa-pause text-xs' : 'fas fa-play text-xs';
+        });
+        wavesurfer.on('timeupdate', t => {
+            timeDisp.innerText =
+                `${String(Math.floor(t/60)).padStart(2,'0')}:${String(Math.floor(t%60)).padStart(2,'0')}`;
+        });
+        wavesurfer.on('finish', () => {
+            playBtn.querySelector('i').className = 'fas fa-play text-xs';
+        });
+
+        // ── Drop zone / file picker ───────────────────────────────────
+        dropZone.addEventListener('click', () => {
+            if (!runBtn.disabled) fileInput.click();
+        });
+        dropZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZone.classList.add('border-indigo-400', '!bg-indigo-50/50');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-indigo-400', '!bg-indigo-50/50');
+        });
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('border-indigo-400', '!bg-indigo-50/50');
+            if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', e => {
+            if (e.target.files[0]) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            uploadedFile = file;
+            dropZone.innerHTML = `
+                <i class="fas fa-file-audio text-4xl text-indigo-400 mb-4 transition"></i>
+                <p class="text-sm font-bold text-slate-700">${escHtml(file.name)}</p>
+                <p class="text-[10px] text-green-500 font-bold mt-1 uppercase">File Ready · ${(file.size/1024).toFixed(0)} KB</p>`;
+        }
+
+        // ── Main action button ────────────────────────────────────────
+        runBtn.addEventListener('click', async () => {
+            // "เริ่มงานใหม่" mode — reset UI
+            if (runBtn.dataset.mode === 'reset') {
+                resetAll();
+                return;
+            }
+
+            if (!uploadedFile) {
+                dropZone.classList.add('border-red-400');
+                setTimeout(() => dropZone.classList.remove('border-red-400'), 1500);
+                return;
+            }
+
+            runBtn.disabled = true;
+            runBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังอัพโหลด...';
+
+            try {
+                // 1. Upload file
+                const form = new FormData();
+                form.append('audio', uploadedFile, uploadedFile.name);
+                const upResp  = await fetch('/api/upload', { method: 'POST', body: form });
+                const upData  = await upResp.json();
+                if (!upData.job_id) throw new Error(upData.error || 'Upload failed');
+                currentJobId = upData.job_id;
+
+                // Load audio into WaveSurfer
+                wavesurfer.load(`/api/audio/${currentJobId}`);
+
+                // 2. Start processing
+                runBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังประมวลผล...';
+                await fetch('/api/process', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ job_id: currentJobId }),
+                });
+
+                // 3. Poll every 2 s
+                pollTimer = setInterval(pollStatus, 2000);
+            } catch (err) {
+                runBtn.disabled = false;
+                runBtn.innerHTML = 'ลองอีกครั้ง';
+                showError(`อัพโหลดล้มเหลว: ${err.message}`);
+            }
+        });
+
+        // ── Status polling ────────────────────────────────────────────
+        async function pollStatus() {
+            if (!currentJobId) return;
+            try {
+                const resp = await fetch(`/api/status/${currentJobId}`);
+                const job  = await resp.json();
+                applyJobState(job);
+            } catch (e) {
+                console.warn('poll error:', e);
+            }
+        }
+
+        function applyJobState(job) {
+            // Update progress steps 2,3,4
+            for (const s of [2, 3, 4]) {
+                if (job.step >= s) updateProgress(s);
+            }
+
+            // Show STT results as they arrive
+            if (job.stt_azure)   setResult(outAz, job.stt_azure);
+            if (job.stt_whisper) setResult(outWp, job.stt_whisper);
+            if (job.stt_mai)     setResult(outMai, job.stt_mai);
+            if (job.final_text)  setFinalText(job.final_text);
+
+            // Status message on button
+            if (job.status === 'processing' && job.message) {
+                runBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> ${escHtml(job.message)}`;
+            }
+
+            if (job.status === 'done') {
+                clearInterval(pollTimer); pollTimer = null;
+                onJobDone(job);
+            }
+            if (job.status === 'error') {
+                clearInterval(pollTimer); pollTimer = null;
+                runBtn.disabled = false;
+                runBtn.innerHTML = 'ลองอีกครั้ง';
+                showError(job.message || 'เกิดข้อผิดพลาด');
+            }
+        }
+
+        function onJobDone(job) {
+            if (job.final_text) setFinalText(job.final_text);
+
+            if (job.summary) {
+                sumArea.innerHTML = `
+                    <div class="p-6 bg-orange-50/60 rounded-2xl border border-orange-100">
+                        <h3 class="text-orange-600 font-bold mb-3 flex items-center gap-2">
+                            <i class="fas fa-file-lines"></i> บทสรุปจาก Azure OpenAI
+                        </h3>
+                        <p class="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">${escHtml(job.summary)}</p>
+                    </div>`;
+            }
+
+            // Unlock download
+            if (job.transcript_file) {
+                dlBtn.disabled = false;
+                dlBtn.onclick = () => window.open(`/api/download/${currentJobId}`, '_blank');
+            }
+
+            runBtn.disabled = false;
+            runBtn.dataset.mode = 'reset';
+            runBtn.innerHTML = '<i class="fas fa-rotate-left mr-2"></i> เริ่มงานใหม่';
+        }
+
+        // ── Helper functions ──────────────────────────────────────────
+        function setResult(el, text) {
+            el.className = 'text-xs text-slate-700 leading-relaxed min-h-[100px]';
+            el.innerText = text;
+        }
+
+        function setFinalText(text) {
+            finalTxt.className = 'text-lg text-slate-700 leading-loose min-h-[120px] font-medium';
+            finalTxt.innerText = text;
+        }
+
+        function updateProgress(step) {
+            const row = document.getElementById(`step-${step}`);
+            const dot = document.getElementById(`dot-${step}`);
+            if (row) row.style.opacity = '1';
+            if (dot) {
+                dot.className = 'w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-xs';
+                dot.innerHTML  = '<i class="fas fa-check"></i>';
+            }
+        }
+
+        function resetAll() {
+            currentJobId  = null;
+            uploadedFile  = null;
+            fileInput.value = '';
+            runBtn.dataset.mode = '';
+            runBtn.disabled = false;
+            runBtn.innerHTML = 'ประมวลผลทันที';
+
+            dropZone.innerHTML = `
+                <i class="fas fa-file-waveform text-4xl text-slate-300 mb-4 transition"></i>
+                <p class="text-sm font-bold text-slate-400">ลาก &amp; วาง หรือ คลิกเพื่อเลือกไฟล์</p>
+                <p class="text-[10px] text-slate-400 mt-1">MP3 · WAV · M4A · FLAC · MP4</p>`;
+
+            for (const s of [2, 3, 4]) {
+                const row = document.getElementById(`step-${s}`);
+                const dot = document.getElementById(`dot-${s}`);
+                if (row) row.style.opacity = '0.4';
+                if (dot) {
+                    dot.className  = 'w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs';
+                    dot.innerText  = s;
+                }
+            }
+
+            outAz.className  = 'text-xs text-slate-500 leading-relaxed min-h-[100px]';
+            outAz.innerText  = 'รอประมวลผล...';
+            outWp.className  = 'text-xs text-slate-500 leading-relaxed min-h-[100px]';
+            outWp.innerText  = 'รอประมวลผล...';
+            outMai.className = 'text-xs text-slate-500 leading-relaxed min-h-[100px]';
+            outMai.innerText = 'รอประมวลผล...';
+
+            finalTxt.className = 'text-lg text-slate-700 leading-loose min-h-[120px] font-medium';
+            finalTxt.innerHTML = '<span class="text-slate-300 italic">เริ่มต้นการทำงานเพื่อสรุปข้อความที่ถูกต้องที่สุด...</span>';
+
+            sumArea.innerHTML = `
+                <div class="flex items-center gap-3 p-4 bg-orange-50 rounded-xl border border-orange-100 italic">
+                    <i class="fas fa-spinner fa-spin text-orange-400"></i>
+                    <span>รอสรุปเนื้อหาจากการเปรียบเทียบ...</span>
+                </div>`;
+
+            dlBtn.disabled = true;
+            dlBtn.onclick  = null;
+        }
+
+        function showError(msg) {
+            sumArea.innerHTML = `
+                <div class="flex items-center gap-3 p-4 bg-red-50 rounded-xl border border-red-200">
+                    <i class="fas fa-triangle-exclamation text-red-500"></i>
+                    <span class="text-red-700 font-medium">${escHtml(msg)}</span>
+                </div>`;
+        }
+
+        function escHtml(s) {
+            return String(s)
+                .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+    </script>
+</body>
+</html>

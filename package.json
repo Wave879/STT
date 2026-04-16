@@ -1,0 +1,11 @@
+{
+  "name": "summary-to-team",
+  "version": "1.0.0",
+  "description": "Enterprise Audio STT System deployed on Cloudflare",
+  "scripts": {
+    "dev": "python ../run.py web",
+    "build": "echo 'Frontend is static'",
+    "deploy": "wrangler pages deploy web/"
+  },
+  "type": "module"
+}

@@ -1,0 +1,361 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Audio AI | COWORK System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/wavesurfer.js@7"></script>
+    <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
+    <link rel="stylesheet" href="static/css/app.css">
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
+
+<!-- ── Navbar ─────────────────────────────────────────────────── -->
+<nav class="flex-none bg-white border-b border-slate-200 px-5 py-2.5 flex justify-between items-center z-50">
+    <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-sm">
+            <i class="fas fa-microchip"></i>
+        </div>
+        <div class="leading-none">
+            <p class="font-bold text-sm text-slate-900">COWORK <span class="text-indigo-600">AudioAI</span></p>
+            <p class="text-[9px] text-slate-400 uppercase tracking-widest">Enterprise Intelligence</p>
+        </div>
+        <div class="h-5 w-px bg-slate-200 mx-1"></div>
+        <span id="file-title" class="text-sm text-slate-500 font-medium">ยังไม่มีไฟล์</span>
+    </div>
+    <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 text-sm">
+            <i class="fas fa-user-tie"></i>
+        </div>
+    </div>
+</nav>
+
+<!-- ── 3-column layout ─────────────────────────────────────────── -->
+<div class="flex-1 flex overflow-hidden">
+
+    <!-- ══ LEFT PANEL ══════════════════════════════════════════════ -->
+    <aside class="w-64 flex-none bg-white border-r border-slate-200 flex flex-col overflow-y-auto tx-scroll">
+
+        <!-- Upload -->
+        <div class="p-4 border-b border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">ไฟล์เสียง</p>
+            <div id="drop-zone" class="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 transition cursor-pointer">
+                <i class="fas fa-file-audio text-2xl text-slate-300 mb-2"></i>
+                <p class="text-xs text-slate-500 mb-2">ลากไฟล์หรือ</p>
+                <label class="cursor-pointer inline-block bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition">
+                    <i class="fas fa-folder-open mr-1"></i> เลือกไฟล์
+                    <input id="file-input" type="file" accept="audio/*,video/*" class="hidden">
+                </label>
+                <p class="text-[9px] text-slate-400 mt-1.5">MP3, WAV, M4A, FLAC</p>
+            </div>
+        </div>
+
+        <!-- Model -->
+        <div class="p-4 border-b border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">โมเดล STT</p>
+            <select id="model-select" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 transition appearance-none cursor-pointer">
+                <option value="all">ทุกโมเดล (Auto)</option>
+                <option value="model1">Azure Speech</option>
+                <option value="model3">MAI Transcribe</option>
+            </select>
+            <button id="main-action-btn" class="w-full mt-2 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <i class="fas fa-bolt mr-1"></i> ประมวลผล
+            </button>
+            <div id="process-status" class="hidden mt-2 text-[11px] px-2 py-1.5 rounded-lg"></div>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="p-4 border-b border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">ความก้าวหน้า</p>
+            <div class="space-y-3">
+                <div id="step-1" class="flex items-center gap-2.5">
+                    <div id="dot-1" class="dot w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-[10px]"><i class="fas fa-check"></i></div>
+                    <p class="text-xs text-slate-600">รับไฟล์เสียง</p>
+                </div>
+                <div id="step-2" class="flex items-center gap-2.5 opacity-40">
+                    <div id="dot-2" class="dot w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px]">2</div>
+                    <p class="text-xs text-slate-600">Clean Noise</p>
+                </div>
+                <div id="step-3" class="flex items-center gap-2.5 opacity-40">
+                    <div id="dot-3" class="dot w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px]">3</div>
+                    <p class="text-xs text-slate-600">STT Engines</p>
+                </div>
+                <div id="step-4" class="flex items-center gap-2.5 opacity-40">
+                    <div id="dot-4" class="dot w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px]">4</div>
+                    <p class="text-xs text-slate-600">Final Consensus</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call Stats -->
+        <div class="p-4 border-b border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Call Details</p>
+            <div class="space-y-2.5">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-400 flex items-center gap-1.5"><i class="fas fa-comments w-3.5 text-center"></i> โมเดลที่ใช้</span>
+                    <span id="stat-model" class="text-xs font-bold text-slate-700">—</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-400 flex items-center gap-1.5"><i class="fas fa-clock w-3.5 text-center"></i> ความยาว</span>
+                    <span id="stat-duration" class="text-xs font-bold text-slate-700">—</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-400 flex items-center gap-1.5"><i class="fas fa-file w-3.5 text-center"></i> ขนาดไฟล์</span>
+                    <span id="stat-size" class="text-xs font-bold text-slate-700">—</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-slate-400 flex items-center gap-1.5"><i class="fas fa-users w-3.5 text-center"></i> ผู้พูด</span>
+                    <span id="stat-speakers" class="text-xs font-bold text-slate-700">—</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Speaker Map -->
+        <div class="p-4">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">ผู้พูด</p>
+            <div id="speaker-map" class="space-y-1.5">
+                <p class="text-[10px] text-slate-300 italic">จะแสดงหลังประมวลผล</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ══ CENTER ═══════════════════════════════════════════════════ -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+
+        <!-- Tabs + search bar -->
+        <div class="flex-none bg-white border-b border-slate-200 px-4 py-2 flex items-center gap-3">
+            <div class="flex gap-1 bg-slate-100 rounded-lg p-0.5">
+                <button id="tab-transcript" onclick="switchTab('transcript')" class="tab-btn tab-active text-xs font-bold px-3 py-1.5 rounded-md transition">Transcript</button>
+                <button id="tab-azure" onclick="switchTab('azure')" class="tab-btn text-xs font-bold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700 transition">Azure</button>
+                <button id="tab-mai" onclick="switchTab('mai')" class="tab-btn text-xs font-bold px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-700 transition">MAI</button>
+            </div>
+            <div class="flex-1 relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+                <input id="search-input" type="text" placeholder="ค้นหาในข้อความ..." oninput="searchTranscript(this.value)"
+                    class="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            </div>
+            <div class="flex items-center gap-2">
+                <select id="final-model-select" class="border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] text-slate-600 bg-white focus:outline-none appearance-none cursor-pointer">
+                    <option value="final">Consensus</option>
+                    <option value="azure">Azure</option>
+                    <option value="mai">MAI</option>
+                </select>
+                <!-- Edit toggle -->
+                <button id="edit-btn" onclick="toggleEditMode()" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1 no-print">
+                    <i class="fas fa-edit mr-1"></i> แก้ไข
+                </button>
+                <!-- Export dropdown -->
+                <div class="relative no-print" id="export-dropdown-wrapper">
+                    <button onclick="document.getElementById('export-menu').classList.toggle('hidden')" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1">
+                        <i class="fas fa-download text-[10px] mr-1"></i> Export <i class="fas fa-chevron-down text-[9px] ml-1"></i>
+                    </button>
+                    <div id="export-menu" class="hidden absolute right-0 top-8 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1 min-w-[130px]">
+                        <button onclick="exportPDF();document.getElementById('export-menu').classList.add('hidden')" class="w-full text-left text-xs px-3 py-2 hover:bg-slate-50 flex items-center gap-2">
+                            <i class="fas fa-file-pdf text-red-400"></i> PDF
+                        </button>
+                        <button onclick="exportWord();document.getElementById('export-menu').classList.add('hidden')" class="w-full text-left text-xs px-3 py-2 hover:bg-slate-50 flex items-center gap-2">
+                            <i class="fas fa-file-word text-blue-500"></i> Word (.doc)
+                        </button>
+                        <button onclick="saveAsTxt();document.getElementById('export-menu').classList.add('hidden')" class="w-full text-left text-xs px-3 py-2 hover:bg-slate-50 flex items-center gap-2">
+                            <i class="fas fa-file-alt text-slate-400"></i> Plain Text (.txt)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transcript area -->
+        <div class="flex-1 overflow-y-auto tx-scroll bg-white px-5 py-4">
+            <!-- Transcript tab -->
+            <div id="panel-transcript" class="tab-panel">
+                <div id="final-text-display" class="space-y-1 text-sm text-slate-700 leading-relaxed min-h-[200px]">
+                    <p class="text-slate-300 italic text-sm">อัพโหลดไฟล์แล้วกด "ประมวลผล" เพื่อเริ่มถอดความ...</p>
+                </div>
+            </div>
+            <!-- Azure tab -->
+            <div id="panel-azure" class="tab-panel hidden">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Azure Speech Services</span>
+                </div>
+                <div id="out-azure" class="text-xs text-slate-600 leading-relaxed">รอประมวลผล...</div>
+            </div>
+            <!-- MAI tab -->
+            <div id="panel-mai" class="tab-panel hidden">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">MAI Transcribe</span>
+                </div>
+                <div id="out-mai" class="text-xs text-slate-600 leading-relaxed">รอประมวลผล...</div>
+            </div>
+        </div>
+
+        <!-- ── Audio Player (bottom of center) ── -->
+        <div class="flex-none bg-white border-t border-slate-200 px-4 py-2.5">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="text-[11px] font-mono text-slate-400" id="current-time">00:00</span>
+                <div class="flex items-center gap-1">
+                    <button class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center text-[10px]" onclick="if(wavesurfer)wavesurfer.skip(-5)"><i class="fas fa-backward"></i></button>
+                    <button id="play-pause-btn" class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 transition text-xs">
+                        <i class="fas fa-play text-xs"></i>
+                    </button>
+                    <button class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center text-[10px]" onclick="if(wavesurfer)wavesurfer.skip(5)"><i class="fas fa-forward"></i></button>
+                </div>
+                <select onchange="if(wavesurfer)wavesurfer.setPlaybackRate(+this.value)" class="text-[11px] border border-slate-200 rounded px-1.5 py-0.5 text-slate-500 focus:outline-none">
+                    <option value="0.75">0.75x</option>
+                    <option value="1" selected>1.0x</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2.0x</option>
+                </select>
+                <span id="total-time" class="text-[11px] font-mono text-slate-300">00:00</span>
+            </div>
+            <div id="waveform-container"></div>
+        </div>
+    </div>
+
+    <!-- ══ RIGHT PANEL ══════════════════════════════════════════════ -->
+    <aside class="w-72 flex-none bg-white border-l border-slate-200 flex flex-col overflow-hidden">
+
+        <!-- Right tabs -->
+        <div class="flex-none border-b border-slate-200 px-3 pt-2.5 flex gap-1 flex-wrap">
+            <button onclick="switchRight('comments')" id="rtab-comments" class="rtab-btn tab-active text-[11px] font-bold px-3 py-1.5 rounded-t-md transition">
+                <i class="fas fa-comments mr-1"></i> Comments
+            </button>
+            <button onclick="switchRight('context')" id="rtab-context" class="rtab-btn text-[11px] font-bold px-3 py-1.5 rounded-t-md text-slate-400 hover:text-slate-700 transition">
+                <i class="fas fa-info-circle mr-1"></i> Context
+            </button>
+            <button onclick="switchRight('summary')" id="rtab-summary" class="rtab-btn text-[11px] font-bold px-3 py-1.5 rounded-t-md text-slate-400 hover:text-slate-700 transition">
+                <i class="fas fa-wand-magic-sparkles mr-1"></i> Summary
+            </button>
+            <button onclick="switchRight('history');renderHistoryPanel()" id="rtab-history" class="rtab-btn text-[11px] font-bold px-3 py-1.5 rounded-t-md text-slate-400 hover:text-slate-700 transition">
+                <i class="fas fa-history mr-1"></i> ประวัติ
+            </button>
+        </div>
+
+        <!-- Comments panel -->
+        <div id="rpanel-comments" class="rpanel flex-1 flex flex-col overflow-hidden">
+            <!-- Write comment -->
+            <div class="p-3 border-b border-slate-100">
+                <div class="flex items-start gap-2">
+                    <div class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs flex-none">
+                        <i class="fas fa-user text-[10px]"></i>
+                    </div>
+                    <div class="flex-1">
+                        <textarea id="comment-input" rows="2" placeholder="เขียน comment หรือ @ระบุคน..."
+                            class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none"></textarea>
+                        <div class="flex justify-between items-center mt-1.5">
+                            <span id="comment-ts" class="text-[10px] text-slate-300">ตอนนี้: 00:00</span>
+                            <button onclick="addComment()" class="text-[11px] bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg font-bold transition">ส่ง</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Comment list -->
+            <div id="comment-list" class="flex-1 overflow-y-auto tx-scroll p-3 space-y-3">
+                <p class="text-[11px] text-slate-300 text-center italic mt-4">ยังไม่มี comment</p>
+            </div>
+        </div>
+
+        <!-- Context panel -->
+        <div id="rpanel-context" class="rpanel hidden flex-1 flex flex-col overflow-y-auto tx-scroll p-3 space-y-4">
+            <!-- Participants -->
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">ผู้เข้าร่วม / Speaker Labels</p>
+                <div id="participant-list" class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <span class="ctx-tag spk-a">A</span>
+                        <input type="text" placeholder="ชื่อผู้พูด A..." data-spk="A"
+                            class="flex-1 text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-200" oninput="updateSpeakerLabel(this)">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="ctx-tag spk-b">B</span>
+                        <input type="text" placeholder="ชื่อผู้พูด B..." data-spk="B"
+                            class="flex-1 text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-200" oninput="updateSpeakerLabel(this)">
+                    </div>
+                    <button onclick="addSpeakerRow()" class="text-[11px] text-indigo-500 hover:text-indigo-700 font-medium mt-1"><i class="fas fa-plus mr-1"></i>เพิ่มผู้พูด</button>
+                </div>
+            </div>
+
+            <!-- Meeting Info -->
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">ข้อมูลการประชุม</p>
+                <div class="space-y-2">
+                    <input type="text" id="ctx-title" placeholder="ชื่อการประชุม / หัวข้อ" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                    <input type="text" id="ctx-date" placeholder="วันที่" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                    <textarea id="ctx-note" rows="3" placeholder="หมายเหตุ / บริบทเพิ่มเติม..."
+                        class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none"></textarea>
+                </div>
+            </div>
+
+            <!-- Attached Files -->
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">เอกสารแนบ</p>
+                <label class="block border-2 border-dashed border-slate-200 rounded-xl p-3 text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition">
+                    <i class="fas fa-paperclip text-slate-300 mb-1"></i>
+                    <p class="text-[11px] text-slate-400">คลิกเพื่อแนบไฟล์</p>
+                    <input type="file" multiple class="hidden" onchange="addAttachment(this)">
+                </label>
+                <div id="attachment-list" class="mt-2 space-y-1"></div>
+            </div>
+
+            <!-- Tags -->
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Tags</p>
+                <div class="flex flex-wrap gap-1 mb-1.5" id="tag-list"></div>
+                <div class="flex gap-1">
+                    <input type="text" id="tag-input" placeholder="เพิ่ม tag..." onkeydown="if(event.key==='Enter')addTag()"
+                        class="flex-1 text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                    <button onclick="addTag()" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1.5 rounded-lg font-medium transition">+</button>
+                </div>
+            </div>
+
+            <button onclick="saveContext()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition mt-2">
+                <i class="fas fa-save mr-1"></i> บันทึก Context
+            </button>
+        </div>
+
+        <!-- Summary panel -->
+        <div id="rpanel-summary" class="rpanel hidden flex-1 overflow-y-auto tx-scroll p-3">
+            <div id="summary-area" class="text-xs text-slate-600 leading-relaxed">
+                <div class="flex items-center gap-2 p-3 bg-orange-50 rounded-xl border border-orange-100 italic">
+                    <i class="fas fa-spinner fa-spin text-orange-400 text-sm"></i>
+                    <span>รอสรุปเนื้อหา...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- History panel -->
+        <div id="rpanel-history" class="rpanel hidden flex-1 flex flex-col overflow-hidden">
+            <div class="p-3 border-b border-slate-100 flex items-center justify-between">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ประวัติการถอดความ</p>
+                <button onclick="renderHistoryPanel()" class="text-[10px] text-indigo-400 hover:text-indigo-600"><i class="fas fa-sync-alt"></i></button>
+            </div>
+            <div id="history-list" class="flex-1 overflow-y-auto tx-scroll p-3 space-y-1">
+                <p class="text-[11px] text-slate-300 text-center italic mt-4">คลิก "ประวัติ" เพื่อโหลด</p>
+            </div>
+        </div>
+
+    </aside>
+</div>
+
+    <!-- ── JavaScript (load order: config → audio → ai → ui → history → app) ── -->
+    <script src="static/js/config.js"></script>
+    <script src="static/js/audio.js"></script>
+    <script src="static/js/ai.js"></script>
+    <script src="static/js/ui.js"></script>
+    <script src="static/js/history.js"></script>
+    <script src="static/js/app.js"></script>
+    <!-- Close export dropdown when clicking outside -->
+    <script>
+        document.addEventListener('click', e => {
+            const wrapper = document.getElementById('export-dropdown-wrapper');
+            const menu    = document.getElementById('export-menu');
+            if (wrapper && menu && !wrapper.contains(e.target)) menu.classList.add('hidden');
+        });
+    </script>
+
+</body>
+</html>
