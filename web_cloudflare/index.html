@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/wavesurfer.js@7"></script>
     <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
+    <script src="static/js/auth.js"></script>
+    <script>Auth.requireAuth();</script>
     <link rel="stylesheet" href="static/css/app.css">
 </head>
 <body class="text-slate-800 h-screen flex flex-col overflow-hidden">
@@ -29,6 +31,13 @@
         </button>
         <button type="button" onclick="window.location.href='./settings.html'" class="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-500 text-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700" aria-label="เปิดหน้าตั้งค่า">
             <i class="fas fa-gear"></i>
+        </button>
+        <div class="hidden items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-600 md:inline-flex">
+            <i class="fas fa-user text-[11px] text-slate-400"></i>
+            <span data-auth-username class="font-semibold text-slate-800">admin</span>
+        </div>
+        <button type="button" data-logout-btn class="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-500 text-sm transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600" aria-label="ออกจากระบบ">
+            <i class="fas fa-right-from-bracket"></i>
         </button>
     </div>
 </nav>
@@ -325,6 +334,7 @@
             const menu    = document.getElementById('export-menu');
             if (wrapper && menu && !wrapper.contains(e.target)) menu.classList.add('hidden');
         });
+        Auth.mountProtectedPage();
     </script>
 
 </body>

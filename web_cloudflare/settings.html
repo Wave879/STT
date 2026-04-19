@@ -6,6 +6,8 @@
     <title>User Profile | COWORK AudioAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="static/js/auth.js"></script>
+    <script>Auth.requireAuth();</script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&display=swap');
         :root {
@@ -38,6 +40,13 @@
                 <button type="button" onclick="window.location.href='./ocr_scan.html'" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm shadow-slate-200/80 transition hover:-translate-y-0.5 hover:bg-slate-50">
                     <i class="fas fa-file-lines text-xs text-slate-500"></i>
                     <span>หน้า OCR</span>
+                </button>
+                <div class="hidden items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-600 lg:inline-flex">
+                    <i class="fas fa-user text-[11px] text-slate-400"></i>
+                    <span data-auth-username class="font-semibold text-slate-800">admin</span>
+                </div>
+                <button type="button" data-logout-btn class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-500 text-sm transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600" aria-label="ออกจากระบบ">
+                    <i class="fas fa-right-from-bracket"></i>
                 </button>
             </div>
         </div>
@@ -304,6 +313,7 @@
         });
 
         applySettings(getSettings());
+        Auth.mountProtectedPage();
     </script>
 </body>
 </html>
