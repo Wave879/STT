@@ -149,8 +149,8 @@
 <input id="import-files" type="file" class="hidden" accept=".png,.jpg,.jpeg,.pdf,application/pdf" multiple>
 
 <script>
-    // OCR API - Cloudflare Worker (Secure Azure Proxy)
-    const OCR_API_URL = 'https://ocr-api.s65122251007.workers.dev';
+    // OCR API - Cloudflare Pages Function (uses Azure via server-side env vars)
+    const OCR_API_URL = '/api/ocr-analyze';
     const state = {
         documents: [],
         activeDocumentId: null,
