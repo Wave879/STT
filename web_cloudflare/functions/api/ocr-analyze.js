@@ -116,7 +116,7 @@ async function handleOcr(request, env) {
     var azPages = analyzeResult.pages || [];
     var azParagraphs = analyzeResult.paragraphs || [];
     var azTables = analyzeResult.tables || [];
-    var rawContent = analyzeResult.content || '';
+    var rawContent = stripSelectionTokens(analyzeResult.content || '');
 
     // Only encode as image for non-PDF files under 4MB
     var imageDataUrl = null;
@@ -130,7 +130,7 @@ async function handleOcr(request, env) {
         var h = page.height || 1;
 
         // Text from lines
-        var pageText = (page.lines || []).map(function(l) { return (l.content || '').trim(); }).filter(Boolean).join('\n');
+        var pageText = (page.lines || []).map(function(l) { return stripSelectionTokens(l.content || ''); }).filter(Boolean).join('\n');
 
         // Paragraphs for this page
         var pageParagraphs = azParagraphs
@@ -139,7 +139,7 @@ async function handleOcr(request, env) {
             })
             .map(function(p) {
                 var reg = (p.boundingRegions || []).find(function(r) { return r.pageNumber === num; }) || {};
-                return { content: (p.content || '').trim(), role: p.role || 'text', polygon: reg.polygon || [] };
+                return { content: stripSelectionTokens(p.content || ''), role: p.role || 'text', polygon: reg.polygon || [] };
             });
 
         var pageTables = azTables
@@ -177,13 +177,22 @@ function toBase64(buffer) {
     return btoa(s);
 }
 
+function stripSelectionTokens(value) {
+    return (value || '')
+        .replace(/:unselected:|:selected:/g, '')
+        .replace(/[ \t]{2,}/g, ' ')
+        .replace(/\n[ \t]+/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+}
+
 function buildTable(table) {
     var headers = {};
     var rows = {};
     (table.cells || []).forEach(function(cell) {
         var r = cell.rowIndex || 0;
         var c = cell.columnIndex || 0;
-        var txt = (cell.content || '').trim();
+        var txt = stripSelectionTokens(cell.content || '');
         if (r === 0) { headers[c] = txt || ('Col_' + (c + 1)); return; }
         if (!rows[r]) rows[r] = {};
         rows[r][headers[c] || ('Col_' + (c + 1))] = txt;
@@ -218,7 +227,7 @@ function buildBoxes(paragraphs, lines, w, h) {
     if (boxes.length) return boxes;
     for (var j = 0; j < lines.length; j++) {
         var b2 = polygonToBounds(lines[j].polygon, w, h);
-        if (b2) boxes.push({ label: 'text', content: lines[j].content || '', bounds: b2 });
+        if (b2) boxes.push({ label: 'text', content: stripSelectionTokens(lines[j].content || ''), bounds: b2 });
     }
     return boxes;
 }
