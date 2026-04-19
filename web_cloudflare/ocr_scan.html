@@ -69,7 +69,7 @@
         <div id="file-list" class="ui-scroll flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50"></div>
     </aside>
 
-    <section class="bg-white border-r border-slate-200 min-h-0 grid" style="grid-template-rows:52px 1fr 190px;">
+    <section class="bg-white border-r border-slate-200 min-h-0 grid" style="grid-template-rows:52px 1fr;">
         <div class="px-4 border-b border-slate-200 flex items-center justify-between gap-4">
             <div class="flex items-center gap-4 min-w-0">
                 <div id="active-file-name" class="font-semibold text-[13px] truncate">No file selected</div>
@@ -114,13 +114,6 @@
             </div>
         </div>
 
-        <div class="border-t border-slate-200 bg-white px-4 py-3 min-h-0">
-            <div class="flex items-center justify-between mb-2">
-                <div class="font-semibold text-[13px]">OCR Raw Result</div>
-                <button id="copy-raw-btn" class="text-slate-400 hover:text-slate-700"><i class="far fa-copy"></i></button>
-            </div>
-            <div id="raw-output" class="raw-pre ui-scroll h-[132px] text-[12px] leading-[1.55] text-slate-600"></div>
-        </div>
     </section>
 
     <aside class="bg-white min-h-0 grid" style="grid-template-rows:64px 1fr;">
@@ -169,7 +162,7 @@
     const scanButtonLabel = document.getElementById('scan-button-label');
     const serviceStatus = document.getElementById('service-status');
     const viewerWrapper = document.getElementById('viewer-wrapper');
-    const rawOutput = document.getElementById('raw-output');
+
     const rightContent = document.getElementById('right-content');
     const zoomLabel = document.getElementById('zoom-label');
     const metaStatus = document.getElementById('meta-status');
@@ -425,12 +418,7 @@
         metaStatus.textContent = doc?.result ? 'Completed' : doc ? 'Imported' : 'Waiting';
         metaPages.textContent = doc?.result?.pageCount || 0;
         metaFileSize.textContent = doc ? doc.sizeLabel : '-';
-        if (doc?.result) {
-            const r = doc.result;
-            rawOutput.textContent = r.rawText || r.markdown || '';
-        } else {
-            rawOutput.textContent = '';
-        }
+
         serviceStatus.classList.toggle('hidden', !doc?.result);
         serviceStatus.classList.toggle('flex', !!doc?.result);
     }
@@ -450,7 +438,6 @@
         scanButton.disabled = true;
         scanButtonLabel.textContent = 'Scanning...';
         metaStatus.textContent = 'Processing';
-        rawOutput.textContent = 'Uploading file to OCR API...';
         try {
             // Send raw bytes — Cloudflare Workers has a large-file bug with FormData/multipart
             const isPdf = doc.name.toLowerCase().endsWith('.pdf') || doc.file.type === 'application/pdf';
@@ -475,7 +462,6 @@
             state.activeBoxIndex = null;
             refreshView();
         } catch (error) {
-            rawOutput.textContent = String(error.message || error);
             rightContent.innerHTML = `<div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">${escapeHtml(String(error.message || error))}</div>`;
             metaStatus.textContent = 'Failed';
         } finally {
@@ -487,7 +473,6 @@
     function addFiles(files) {
         const acceptedFiles = files.filter(isSupportedFile);
         if (!acceptedFiles.length) {
-            rawOutput.textContent = 'รองรับเฉพาะไฟล์ PDF, PNG, JPG และ JPEG';
             rightContent.innerHTML = '<div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">รองรับเฉพาะไฟล์ PDF, PNG, JPG และ JPEG</div>';
             return;
         }
@@ -521,7 +506,6 @@
     document.getElementById('zoom-in').addEventListener('click', () => { state.zoom = Math.min(1.6, state.zoom + 0.1); refreshView(); });
     document.getElementById('zoom-out').addEventListener('click', () => { state.zoom = Math.max(0.6, state.zoom - 0.1); refreshView(); });
     document.getElementById('fit-btn').addEventListener('click', () => { state.zoom = 1; refreshView(); });
-    document.getElementById('copy-raw-btn').addEventListener('click', () => navigator.clipboard.writeText(rawOutput.textContent || ''));
     document.getElementById('copy-main-btn').addEventListener('click', () => navigator.clipboard.writeText(rightContent.innerText || ''));
     pageSelect.addEventListener('change', (event) => { state.activePageIndex = Number(event.target.value || 0); state.activeBoxIndex = null; refreshView(); });
     document.getElementById('prev-page-btn').addEventListener('click', () => { const doc = getActiveDocument(); if (!doc?.result) return; state.activePageIndex = Math.max(0, state.activePageIndex - 1); state.activeBoxIndex = null; refreshView(); });
