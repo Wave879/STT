@@ -203,6 +203,73 @@
             <div class="panel rounded-[28px] p-6">
                 <div class="mb-5 flex items-center justify-between gap-3">
                     <div>
+                        <p class="text-xs font-bold uppercase tracking-[0.3em] text-slate-400">Account Security</p>
+                        <h2 class="mt-2 text-xl font-semibold text-slate-950">เปลี่ยนรหัสผ่าน</h2>
+                    </div>
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                        <i class="fas fa-key"></i>
+                    </div>
+                </div>
+                <form id="password-form" class="space-y-4">
+                    <label class="block rounded-2xl border border-slate-200 bg-white p-4">
+                        <span class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-slate-400">บัญชีปัจจุบัน</span>
+                        <input id="profile-username" type="text" readonly class="w-full bg-transparent text-sm font-medium text-slate-800 outline-none">
+                    </label>
+                    <label class="block rounded-2xl border border-slate-200 bg-white p-4">
+                        <span class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-slate-400">รหัสผ่านปัจจุบัน</span>
+                        <input id="current-password" type="password" class="w-full bg-transparent text-sm font-medium text-slate-800 outline-none" placeholder="กรอกรหัสผ่านเดิม">
+                    </label>
+                    <label class="block rounded-2xl border border-slate-200 bg-white p-4">
+                        <span class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-slate-400">รหัสผ่านใหม่</span>
+                        <input id="new-password" type="password" class="w-full bg-transparent text-sm font-medium text-slate-800 outline-none" placeholder="อย่างน้อย 6 ตัวอักษร">
+                    </label>
+                    <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-300 transition hover:-translate-y-0.5 hover:bg-slate-800">
+                        <i class="fas fa-key text-xs"></i>
+                        <span>อัปเดตรหัสผ่าน</span>
+                    </button>
+                    <div id="password-message" class="hidden rounded-2xl border px-4 py-3 text-sm font-medium"></div>
+                </form>
+            </div>
+
+            <div class="panel rounded-[28px] p-6">
+                <div class="mb-5 flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-[0.3em] text-slate-400">User Management</p>
+                        <h2 class="mt-2 text-xl font-semibold text-slate-950">จัดการผู้ใช้</h2>
+                    </div>
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <form id="create-user-form" class="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
+                    <label class="block rounded-2xl border border-slate-200 bg-white p-4">
+                        <span class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Username ใหม่</span>
+                        <input id="new-username" type="text" class="w-full bg-transparent text-sm font-medium text-slate-800 outline-none" placeholder="เช่น manager01">
+                    </label>
+                    <label class="block rounded-2xl border border-slate-200 bg-white p-4">
+                        <span class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-slate-400">รหัสผ่านเริ่มต้น</span>
+                        <input id="new-user-password" type="password" class="w-full bg-transparent text-sm font-medium text-slate-800 outline-none" placeholder="อย่างน้อย 6 ตัวอักษร">
+                    </label>
+                    <div class="flex items-end">
+                        <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:-translate-y-0.5 hover:bg-indigo-700">
+                            <i class="fas fa-user-plus text-xs"></i>
+                            <span>เพิ่มผู้ใช้</span>
+                        </button>
+                    </div>
+                </form>
+                <div id="user-message" class="mt-4 hidden rounded-2xl border px-4 py-3 text-sm font-medium"></div>
+                <div class="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white">
+                    <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3 text-xs font-bold uppercase tracking-[0.25em] text-slate-400">
+                        <span>Users</span>
+                        <span id="user-count">0 accounts</span>
+                    </div>
+                    <div id="user-list" class="divide-y divide-slate-100"></div>
+                </div>
+            </div>
+
+            <div class="panel rounded-[28px] p-6">
+                <div class="mb-5 flex items-center justify-between gap-3">
+                    <div>
                         <p class="text-xs font-bold uppercase tracking-[0.3em] text-slate-400">Workspace Info</p>
                         <h2 class="mt-2 text-xl font-semibold text-slate-950">ข้อมูลระบบ</h2>
                     </div>
@@ -284,6 +351,48 @@
             showMessage.timer = window.setTimeout(() => box.classList.add('hidden'), 2600);
         }
 
+        function showInlineMessage(targetId, text, tone) {
+            const box = document.getElementById(targetId);
+            if (!box) return;
+            box.textContent = text;
+            box.className = `mt-4 rounded-2xl border px-4 py-3 text-sm font-medium ${tone === 'error' ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`;
+            box.classList.remove('hidden');
+        }
+
+        function renderUsers() {
+            const list = document.getElementById('user-list');
+            const count = document.getElementById('user-count');
+            if (!list || !count) return;
+            const users = Auth.getUserEntries().sort((a, b) => a.username.localeCompare(b.username));
+            count.textContent = `${users.length} accounts`;
+            list.innerHTML = users.map((user) => `
+                <div class="flex items-center justify-between gap-3 px-4 py-3">
+                    <div>
+                        <div class="text-sm font-semibold text-slate-900">${user.username}</div>
+                        <div class="text-xs text-slate-400">${user.role || 'user'}${user.username === Auth.getCurrentUser() ? ' • กำลังใช้งาน' : ''}</div>
+                    </div>
+                    <button
+                        type="button"
+                        class="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        data-delete-user="${user.username}"
+                        ${user.username === 'admin' || user.username === Auth.getCurrentUser() ? 'disabled' : ''}
+                    >ลบ</button>
+                </div>
+            `).join('');
+
+            list.querySelectorAll('[data-delete-user]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    try {
+                        Auth.deleteUser(button.dataset.deleteUser);
+                        renderUsers();
+                        showInlineMessage('user-message', 'ลบบัญชีผู้ใช้เรียบร้อยแล้ว', 'success');
+                    } catch (error) {
+                        showInlineMessage('user-message', error.message || String(error), 'error');
+                    }
+                });
+            });
+        }
+
         document.getElementById('noiseLevel').addEventListener('input', (event) => {
             document.getElementById('noiseValue').textContent = `${event.target.value}%`;
         });
@@ -308,12 +417,47 @@
             showMessage('รีเซ็ตกลับเป็นค่าเริ่มต้นแล้ว');
         });
 
+        document.getElementById('profile-username').value = Auth.getCurrentUser() || 'admin';
+
+        document.getElementById('password-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            try {
+                Auth.changePassword(
+                    Auth.getCurrentUser(),
+                    document.getElementById('current-password').value,
+                    document.getElementById('new-password').value,
+                );
+                document.getElementById('current-password').value = '';
+                document.getElementById('new-password').value = '';
+                showInlineMessage('password-message', 'อัปเดตรหัสผ่านเรียบร้อยแล้ว', 'success');
+            } catch (error) {
+                showInlineMessage('password-message', error.message || String(error), 'error');
+            }
+        });
+
+        document.getElementById('create-user-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            try {
+                Auth.createUser(
+                    document.getElementById('new-username').value,
+                    document.getElementById('new-user-password').value,
+                );
+                document.getElementById('new-username').value = '';
+                document.getElementById('new-user-password').value = '';
+                renderUsers();
+                showInlineMessage('user-message', 'เพิ่มผู้ใช้เรียบร้อยแล้ว', 'success');
+            } catch (error) {
+                showInlineMessage('user-message', error.message || String(error), 'error');
+            }
+        });
+
         document.querySelectorAll('select').forEach((select) => {
             select.addEventListener('change', () => applySettings(collectSettings()));
         });
 
         applySettings(getSettings());
         Auth.mountProtectedPage();
+        renderUsers();
     </script>
 </body>
 </html>
