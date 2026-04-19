@@ -63,6 +63,67 @@ function getTranscriptContext() {
     return String(src || '').trim().slice(0, 12000);
 }
 
+function getCurrentFileLabel() {
+    const name = state.currentFile?.name || '';
+    return String(name).replace(/\.[^.]+$/, '').trim();
+}
+
+function buildAgentSuggestions() {
+    const transcript = getTranscriptContext();
+    const fileLabel = getCurrentFileLabel();
+    const lower = transcript.toLowerCase();
+    const suggestions = [];
+
+    if (fileLabel) {
+        suggestions.push(`ไฟล์ ${fileLabel} นี้พูดถึงเรื่องอะไร`);
+    }
+
+    suggestions.push('การประชุมครั้งนี้ชื่ออะไร');
+    suggestions.push('วันนี้พูดเรื่องอะไร');
+
+    if (/\[ผู้พูด|ผู้เข้าร่วม|speaker|attendee|ทีม|คุณ|ครับ|ค่ะ/.test(transcript)) {
+        suggestions.push('ใครอยู่ในการประชุมนี้บ้าง');
+    }
+
+    if (/next step|action|todo|task|ต่อไป|ถัดไป|ต้องทำ|มอบหมาย|ติดตาม/i.test(transcript)) {
+        suggestions.push('Next step คืออะไร');
+    } else {
+        suggestions.push('มี Action Item อะไรบ้าง');
+    }
+
+    if (/risk|issue|ปัญหา|ความเสี่ยง|อุปสรรค|blocker/i.test(lower)) {
+        suggestions.push('มี Risk หรือ Issue อะไรบ้าง');
+    }
+
+    if (/ตัดสินใจ|มติ|approve|อนุมัติ|ตกลง/i.test(transcript)) {
+        suggestions.push('มีมติหรือข้อตกลงอะไรบ้าง');
+    }
+
+    return Array.from(new Set(suggestions)).slice(0, 5);
+}
+
+function renderAgentSuggestions() {
+    const container = document.getElementById('agent-suggestion-list');
+    const input = document.getElementById('comment-input');
+    if (!container || !input) return;
+
+    const suggestions = buildAgentSuggestions();
+    container.innerHTML = suggestions.map((text) => `
+        <button
+            type="button"
+            class="agent-suggestion rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] leading-4 text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+            data-agent-suggestion="${escapeHtmlChat(text)}"
+        >${escapeHtmlChat(text)}</button>
+    `).join('');
+
+    container.querySelectorAll('[data-agent-suggestion]').forEach((button) => {
+        button.addEventListener('click', () => {
+            input.value = button.dataset.agentSuggestion || '';
+            input.focus();
+        });
+    });
+}
+
 async function getAgentSystemPrompt() {
     if (_agentSystemPrompt) return _agentSystemPrompt;
     try {
@@ -192,6 +253,7 @@ function renderComments() {
 document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('comment-input');
     if (!input) return;
+    renderAgentSuggestions();
     input.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
