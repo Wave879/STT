@@ -28,16 +28,16 @@ async function handleOcr(request, env) {
 
     const ct = request.headers.get('Content-Type') || '';
 
-    // Support both: raw PDF body (Content-Type: application/pdf) and multipart FormData
+    // Support both: raw body uploads and multipart FormData
     let fileBytes, fileName, browserMime, isPdf;
 
-    if (ct.includes('application/pdf') || ct.includes('application/octet-stream') || (!ct.includes('multipart') && !ct.includes('form'))) {
+    if (!ct.includes('multipart') && !ct.includes('form')) {
         // Raw body upload — avoids CF Workers FormData/multipart large-file bug
         fileBytes = await request.arrayBuffer();
         const rawName = request.headers.get('X-Filename') || 'document.pdf';
         try { fileName = decodeURIComponent(rawName); } catch(e) { fileName = rawName; }
-        browserMime = ct.includes('application/pdf') ? 'application/pdf' : (ct || 'application/octet-stream');
-        isPdf = true;
+        browserMime = ct || 'application/octet-stream';
+        isPdf = ct.includes('application/pdf') || ct.includes('application/x-pdf');
     } else {
         // Multipart FormData
         let form;
