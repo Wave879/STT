@@ -33,18 +33,104 @@ function switchRight(name) {
     }
 }
 
-// ── Comments ──────────────────────────────────────────────────
+// ── Agent AI Chat ─────────────────────────────────────────────
 const _comments = [];
+let _agentBusy = false;
 
-function addComment() {
+function escapeHtmlChat(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function getChatTimestamp() {
+    const current = document.getElementById('current-time')?.textContent;
+    if (current && current.trim()) return current.trim();
+    const now = new Date();
+    return now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+}
+
+function getTranscriptContext() {
+    const src = (state.results && state.results.final)
+        || document.getElementById('final-text-display')?.innerText
+        || '';
+    return String(src || '').trim().slice(0, 12000);
+}
+
+function setAgentBusy(isBusy) {
+    _agentBusy = isBusy;
     const input = document.getElementById('comment-input');
-    const text  = input.value.trim();
+    const button = document.querySelector('#rpanel-comments button[onclick="addComment()"]');
+    if (input) input.disabled = isBusy;
+    if (button) {
+        button.disabled = isBusy;
+        button.textContent = isBusy ? 'กำลังตอบ...' : 'ส่ง';
+        button.classList.toggle('opacity-60', isBusy);
+        button.classList.toggle('cursor-not-allowed', isBusy);
+    }
+}
+
+async function addComment() {
+    if (_agentBusy) return;
+    const input = document.getElementById('comment-input');
+    const text = input.value.trim();
     if (!text) return;
-    const ts = document.getElementById('current-time').textContent;
-    const id = Date.now();
-    _comments.push({ id, text, ts, time: Date.now() });
+
+    const userMessage = { id: Date.now(), role: 'user', text, ts: getChatTimestamp() };
+    _comments.push(userMessage);
     input.value = '';
+
+    const pendingMessage = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        text: 'Agent AI กำลังคิดคำตอบ...',
+        ts: getChatTimestamp(),
+        pending: true,
+    };
+    _comments.push(pendingMessage);
     renderComments();
+    setAgentBusy(true);
+
+    try {
+        const transcript = getTranscriptContext();
+        const messages = [
+            {
+                role: 'system',
+                content: 'คุณคือ Agent AI ผู้ช่วยวิเคราะห์บทถอดเสียงการประชุม ตอบเป็นภาษาไทยแบบกระชับ ชัดเจน และอ้างอิงจาก transcript ที่ให้มาเท่านั้น ถ้า transcript ยังไม่มีข้อมูล ให้บอกตรงๆ ว่ายังไม่มี transcript สำหรับวิเคราะห์',
+            },
+        ];
+
+        if (transcript) {
+            messages.push({
+                role: 'system',
+                content: `Transcript ปัจจุบัน:\n\n${transcript}`,
+            });
+        }
+
+        _comments
+            .filter((item) => !item.pending)
+            .slice(-8)
+            .forEach((item) => {
+                messages.push({
+                    role: item.role === 'assistant' ? 'assistant' : 'user',
+                    content: item.text,
+                });
+            });
+
+        const answer = await callOAI(messages, { maxTokens: 900, temperature: 0.2 });
+        pendingMessage.text = (answer || '').trim() || 'Agent AI ไม่มีคำตอบในตอนนี้';
+        pendingMessage.pending = false;
+    } catch (error) {
+        pendingMessage.text = `เกิดข้อผิดพลาด: ${error.message || error}`;
+        pendingMessage.pending = false;
+    } finally {
+        setAgentBusy(false);
+        renderComments();
+        input.focus();
+    }
 }
 
 function renderComments() {
@@ -53,26 +139,44 @@ function renderComments() {
         list.innerHTML = '<p class="text-[11px] text-slate-300 text-center italic mt-4">ยังไม่มี Agent AI</p>';
         return;
     }
-    list.innerHTML = _comments.map(c => `
-        <div class="group flex gap-2 p-2.5 rounded-xl hover:bg-slate-50 transition">
-            <div class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] flex-none font-bold">U</div>
-            <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-0.5">
-                    <span class="text-[11px] font-bold text-slate-700">คุณ</span>
-                    <span class="text-[10px] text-slate-300">${c.ts}</span>
-                    <button onclick="deleteComment(${c.id})" class="ml-auto text-[10px] text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><i class="fas fa-times"></i></button>
+    list.innerHTML = _comments.map(c => {
+        const isUser = c.role === 'user';
+        const side = isUser ? 'justify-end' : 'justify-start';
+        const bubble = isUser
+            ? 'bg-indigo-600 text-white rounded-br-md'
+            : 'bg-slate-100 text-slate-700 rounded-bl-md';
+        const avatar = isUser ? 'U' : 'AI';
+        const name = isUser ? 'คุณ' : 'Agent AI';
+        const metaTone = isUser ? 'text-indigo-200' : 'text-slate-400';
+        const pending = c.pending ? '<i class="fas fa-spinner fa-spin text-[10px]"></i>' : '';
+        return `
+        <div class="flex ${side}">
+            <div class="max-w-[88%] flex ${isUser ? 'flex-row-reverse' : 'flex-row'} gap-2 items-start">
+                <div class="w-7 h-7 rounded-full ${isUser ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-600'} flex items-center justify-center text-[10px] flex-none font-bold">${avatar}</div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2 mb-1 ${isUser ? 'justify-end' : 'justify-start'}">
+                        <span class="text-[11px] font-bold text-slate-700">${name}</span>
+                        <span class="text-[10px] ${metaTone}">${escapeHtmlChat(c.ts)}</span>
+                        ${pending}
+                    </div>
+                    <div class="px-3 py-2.5 text-xs leading-6 break-words shadow-sm ${bubble}">${escapeHtmlChat(c.text).replace(/\n/g, '<br>')}</div>
                 </div>
-                <p class="text-xs text-slate-600 break-words">${c.text.replace(/</g, '&lt;')}</p>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
     list.scrollTop = list.scrollHeight;
 }
 
-function deleteComment(id) {
-    const idx = _comments.findIndex(c => c.id === id);
-    if (idx > -1) { _comments.splice(idx, 1); renderComments(); }
-}
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('comment-input');
+    if (!input) return;
+    input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            addComment();
+        }
+    });
+});
 
 // ── Context — Speaker Labels ───────────────────────────────────
 const _speakerLabels = { A: '', B: '' };
