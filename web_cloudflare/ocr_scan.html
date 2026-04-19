@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek OCR Style | COWORK System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&display=swap');
+        :root {
+            --blue: #2563eb;
+            --blue-weak: #dbeafe;
+            --ink: #1f2937;
+            --line: #e5e7eb;
+            --bg: #f4f7fb;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Anuphan', sans-serif; background: var(--bg); color: var(--ink); }
+        .ui-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .ui-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+        .workspace { height: calc(100vh - 53px); display: grid; grid-template-columns: 212px minmax(560px, 1fr) 540px; min-height: 0; }
+        .file-item.active { background: #ffffff; border-color: #93c5fd; box-shadow: inset 3px 0 0 var(--blue); }
+        .viewer-paper { position: relative; width: min(100%, 780px); margin: 0 auto; background: white; border: 1px solid var(--line); box-shadow: 0 12px 34px rgba(15, 23, 42, .08); border-radius: 4px; overflow: hidden; transform-origin: top center; transition: transform .18s ease; }
+        .ocr-box { position: absolute; border: 2px solid rgba(37, 99, 235, .88); background: rgba(37, 99, 235, .08); cursor: pointer; transition: all .15s ease; }
+        .ocr-box:hover, .ocr-box.active { border-color: #1d4ed8; background: rgba(37, 99, 235, .18); box-shadow: 0 0 0 2px rgba(59, 130, 246, .15); }
+        .ocr-badge { position: absolute; top: -18px; left: -2px; background: var(--blue); color: #fff; font-size: 10px; line-height: 1; padding: 3px 6px; border-radius: 4px 4px 0 0; }
+        .segment-item.active { background: #eff6ff; border-color: #93c5fd; box-shadow: inset 3px 0 0 var(--blue); }
+        .format-tab.active, .right-tab.active { color: #111827; background: #fff; box-shadow: 0 1px 2px rgba(15, 23, 42, .05); }
+        .raw-pre { white-space: pre-wrap; word-break: break-word; font-family: Consolas, 'Courier New', monospace; }
+        .status-pill { background: #eff6ff; color: var(--blue); border: 1px solid #bfdbfe; }
+        @media (max-width: 1200px) {
+            .workspace { grid-template-columns: 180px 1fr 420px; }
+        }
+        @media (max-width: 1024px) {
+            .workspace { display: block; height: auto; }
+        }
+    </style>
+</head>
+<body class="overflow-hidden">
+
+<nav class="flex-none bg-white border-b border-slate-200 px-5 py-2.5 flex justify-between items-center z-50">
+    <div class="flex items-center gap-4 pl-2">
+        <img src="static/{2CF6B2F2-1D80-4B84-A3F5-C879692F0673}.png" alt="BETiMES Solutions" class="h-12 w-auto object-contain">
+        <div class="h-6 w-px bg-slate-200 mx-1"></div>
+        <span id="file-title" class="text-sm text-slate-500 font-medium">ยังไม่มีไฟล์</span>
+    </div>
+    <div class="flex items-center gap-2">
+        <button type="button" onclick="window.location.href='./index_standalone.html'" class="group inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-md shadow-slate-200/80 transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-lg hover:shadow-slate-300/70">
+            <span class="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs text-slate-700 ring-1 ring-slate-200 transition group-hover:bg-slate-200">
+                <i class="fas fa-wave-square"></i>
+            </span>
+            <span>หน้าถอดเสียง</span>
+            <i class="fas fa-arrow-right text-[11px] text-slate-400 transition group-hover:text-slate-700"></i>
+        </button>
+        <button type="button" onclick="window.location.href='./settings.html'" class="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-500 text-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700" aria-label="เปิดหน้าตั้งค่า">
+            <i class="fas fa-gear"></i>
+        </button>
+    </div>
+</nav>
+
+<div class="workspace">
+    <aside class="bg-white border-r border-slate-200 flex flex-col min-h-0">
+        <div class="px-3 py-3 border-b border-slate-100 flex items-center gap-3 text-slate-400">
+            <input type="checkbox" class="rounded border-slate-300">
+            <div class="text-sm font-medium">Files</div>
+        </div>
+        <div id="file-list" class="ui-scroll flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50"></div>
+    </aside>
+
+    <section class="bg-white border-r border-slate-200 min-h-0 grid" style="grid-template-rows:52px 1fr 190px;">
+        <div class="px-4 border-b border-slate-200 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-4 min-w-0">
+                <div id="active-file-name" class="font-semibold text-[13px] truncate">No file selected</div>
+                <button id="scan-button" class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[13px] font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="far fa-file-alt"></i>
+                    <span id="scan-button-label">Scan to Document</span>
+                    <i class="fas fa-chevron-down text-[10px]"></i>
+                </button>
+                <span id="service-status" class="status-pill hidden items-center gap-1 text-[11px] font-semibold rounded-md px-2 py-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                    OCR Ready
+                </span>
+            </div>
+            <div class="flex items-center gap-2 text-[13px] text-slate-500">
+                <button id="zoom-out" class="w-8 h-8 border border-slate-200 rounded-md bg-white hover:bg-slate-50">-</button>
+                <div id="zoom-label" class="w-14 text-center">100%</div>
+                <button id="zoom-in" class="w-8 h-8 border border-slate-200 rounded-md bg-white hover:bg-slate-50">+</button>
+                <button id="fit-btn" class="px-3 h-8 border border-slate-200 rounded-md bg-white hover:bg-slate-50">Fit</button>
+            </div>
+        </div>
+
+        <div class="ui-scroll overflow-y-auto bg-slate-50 p-5">
+            <div id="page-toolbar" class="mb-4 flex items-center justify-between gap-3 text-[12px] text-slate-500">
+                <div class="flex items-center gap-2">
+                    <button id="prev-page-btn" class="w-7 h-7 rounded-full border border-slate-200 bg-white hover:bg-slate-50"><i class="fas fa-chevron-left text-[10px]"></i></button>
+                    <select id="page-select" class="border border-slate-200 rounded-md px-2 py-1 bg-white text-[12px]"><option value="">Page 1</option></select>
+                    <button id="next-page-btn" class="w-7 h-7 rounded-full border border-slate-200 bg-white hover:bg-slate-50"><i class="fas fa-chevron-right text-[10px]"></i></button>
+                </div>
+                <div id="viewer-meta">Status: Idle</div>
+            </div>
+            <div id="viewer-wrapper" class="viewer-paper">
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-center text-slate-300 px-8">
+                    <i class="fas fa-file-import text-4xl mb-4"></i>
+                    <p class="text-lg font-semibold">Import file to begin</p>
+                    <p class="mt-2 text-sm">เลือกหรือวางไฟล์ทางซ้าย แล้วกด Scan to Document</p>
+                </div>
+            </div>
+            <div class="mt-4 text-[13px] text-slate-500 flex gap-6 px-1">
+                <span>Status: <span id="meta-status" class="text-blue-600 font-semibold">Waiting</span></span>
+                <span>Pages: <span id="meta-pages" class="font-medium text-slate-700">0</span></span>
+                <span>File: <span id="meta-file-size" class="font-medium text-slate-700">-</span></span>
+            </div>
+        </div>
+
+        <div class="border-t border-slate-200 bg-white px-4 py-3 min-h-0">
+            <div class="flex items-center justify-between mb-2">
+                <div class="font-semibold text-[13px]">OCR Raw Result</div>
+                <button id="copy-raw-btn" class="text-slate-400 hover:text-slate-700"><i class="far fa-copy"></i></button>
+            </div>
+            <div id="raw-output" class="raw-pre ui-scroll h-[132px] text-[12px] leading-[1.55] text-slate-600"></div>
+        </div>
+    </section>
+
+    <aside class="bg-white min-h-0 grid" style="grid-template-rows:64px 1fr;">
+        <div class="border-b border-slate-200 px-4 py-3 flex items-center justify-between gap-4">
+            <div class="bg-slate-100 rounded-xl p-1 flex items-center gap-1 text-[13px] text-slate-500">
+                <button class="format-tab active px-12 py-2 rounded-lg font-semibold" data-format="markdown">Markdown</button>
+                <button class="format-tab px-12 py-2 rounded-lg font-semibold" data-format="word">Word</button>
+                <button class="format-tab px-12 py-2 rounded-lg font-semibold" data-format="pdf">PDF</button>
+            </div>
+            <div class="flex items-center gap-3 text-slate-400">
+                <button id="copy-main-btn" class="hover:text-blue-600"><i class="far fa-copy"></i></button>
+                <button class="hover:text-blue-600"><i class="fas fa-download"></i></button>
+                <span class="text-blue-500"><i class="fas fa-toggle-on"></i></span>
+            </div>
+        </div>
+        <div class="ui-scroll overflow-y-auto bg-[#fcfcfe]">
+            <div class="px-5 pt-4 pb-2 flex items-center gap-2 text-[12px] text-slate-400 border-b border-slate-100">
+                <button class="right-tab active px-3 py-1.5 rounded-md" data-right-tab="content">Content</button>
+                <button class="right-tab px-3 py-1.5 rounded-md" data-right-tab="inspector">Inspector</button>
+            </div>
+            <div id="right-content" class="px-5 py-5"></div>
+        </div>
+    </aside>
+</div>
+
+<input id="import-files" type="file" class="hidden" accept=".png,.jpg,.jpeg,.pdf,application/pdf" multiple>
+
+<script>
+    // OCR API - Cloudflare Worker (Secure Azure Proxy)
+    const OCR_API_URL = 'https://ocr-api.s65122251007.workers.dev';
+    const state = {
+        documents: [],
+        activeDocumentId: null,
+        activePageIndex: 0,
+        activeBoxIndex: null,
+        activeFormat: 'markdown',
+        activeRightTab: 'content',
+        zoom: 1,
+    };
+
+    const importFiles = document.getElementById('import-files');
+    const fileList = document.getElementById('file-list');
+    const activeFileName = document.getElementById('active-file-name');
+    const fileTitle = document.getElementById('file-title');
+    const scanButton = document.getElementById('scan-button');
+    const scanButtonLabel = document.getElementById('scan-button-label');
+    const serviceStatus = document.getElementById('service-status');
+    const viewerWrapper = document.getElementById('viewer-wrapper');
+    const rawOutput = document.getElementById('raw-output');
+    const rightContent = document.getElementById('right-content');
+    const zoomLabel = document.getElementById('zoom-label');
+    const metaStatus = document.getElementById('meta-status');
+    const metaPages = document.getElementById('meta-pages');
+    const metaFileSize = document.getElementById('meta-file-size');
+    const viewerMeta = document.getElementById('viewer-meta');
+    const pageSelect = document.getElementById('page-select');
+
+    function escapeHtml(value) {
+        return (value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function formatBytes(bytes) {
+        if (!bytes) return '0 KB';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let value = bytes;
+        let unitIndex = 0;
+        while (value >= 1024 && unitIndex < units.length - 1) {
+            value /= 1024;
+            unitIndex += 1;
+        }
+        return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+    }
+
+    // ── PDF.js page renderer ─────────────────────────────────────────────────
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    async function renderPdfPages(doc) {
+        if (doc.kind !== 'pdf' || typeof pdfjsLib === 'undefined') return;
+        try {
+            const ab = await doc.file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+            doc.pdfPageImages = [];
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const pdfPage = await pdf.getPage(i);
+                const vp = pdfPage.getViewport({ scale: 1.5 });
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(vp.width);
+                canvas.height = Math.round(vp.height);
+                await pdfPage.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+                doc.pdfPageImages.push({ image: canvas.toDataURL('image/jpeg', 0.88), width: Math.round(vp.width), height: Math.round(vp.height) });
+            }
+            if (doc.pdfPageImages.length > 0) {
+                doc.previewImage = doc.pdfPageImages[0].image;
+            }
+            refreshView();
+        } catch (e) {
+            console.warn('PDF.js render failed:', e.message);
+        }
+    }
+
+    function isSupportedFile(file) {
+        const lowerName = (file?.name || '').toLowerCase();
+        return lowerName.endsWith('.pdf') || lowerName.endsWith('.png') || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg');
+    }
+
+    function getDocumentKind(file) {
+        return (file?.name || '').toLowerCase().endsWith('.pdf') || file?.type === 'application/pdf' ? 'pdf' : 'image';
+    }
+
+    function markdownToHtml(markdown) {
+        const blocks = (markdown || '').split(/\n\n+/).filter(Boolean);
+        return blocks.map((block) => {
+            const safe = escapeHtml(block).replace(/\n/g, '<br>');
+            if (block.startsWith('# ')) return `<h1 class="text-[26px] leading-tight font-bold text-slate-800 mb-4">${escapeHtml(block.slice(2))}</h1>`;
+            if (block.startsWith('## ')) return `<h2 class="text-[18px] font-bold text-slate-800 mt-6 mb-3 pb-2 border-b border-slate-200">${escapeHtml(block.slice(3))}</h2>`;
+            return `<p class="text-[14px] leading-8 text-slate-700 mb-3">${safe}</p>`;
+        }).join('');
+    }
+
+    function getActiveDocument() {
+        return state.documents.find((doc) => doc.id === state.activeDocumentId) || null;
+    }
+
+    function getActivePage() {
+        return getActiveDocument()?.result?.pages?.[state.activePageIndex] || null;
+    }
+
+    function openFilePicker() {
+        importFiles.click();
+    }
+
+    function renderFileList() {
+        if (!state.documents.length) {
+            fileList.innerHTML = `
+                <button type="button" onclick="openFilePicker()" class="w-full rounded-xl border border-dashed border-slate-300 bg-white p-4 text-left hover:border-blue-300 hover:bg-blue-50 transition">
+                    <div class="text-sm font-semibold text-slate-700 mb-1">Import Files</div>
+                    <div class="text-xs text-slate-400">PDF, PNG, JPG, JPEG</div>
+                </button>`;
+            return;
+        }
+        fileList.innerHTML = `
+            <button type="button" onclick="openFilePicker()" class="w-full rounded-xl border border-dashed border-slate-300 bg-white p-3 text-left hover:border-blue-300 hover:bg-blue-50 transition">
+                <div class="text-[12px] font-semibold text-slate-700"><i class="fas fa-cloud-upload-alt mr-1 text-blue-500"></i>Import Files</div>
+            </button>
+            ${state.documents.map((doc) => `
+                <button class="file-item ${doc.id === state.activeDocumentId ? 'active' : ''} w-full text-left bg-white border border-slate-200 rounded-xl p-3 flex items-center gap-3 transition hover:border-blue-300" data-doc-id="${doc.id}">
+                    <div class="w-12 h-16 rounded-lg border border-slate-200 bg-white flex items-center justify-center overflow-hidden">
+                        ${doc.previewImage ? `<img src="${doc.previewImage}" alt="thumb" class="w-full h-full object-cover">` : `<i class="${doc.kind === 'pdf' ? 'fas fa-file-pdf text-rose-400' : 'far fa-file-lines text-slate-300'}"></i>`}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-[13px] font-semibold text-slate-700 truncate">${escapeHtml(doc.name)}</div>
+                        <div class="text-[12px] text-slate-400">${doc.sizeLabel}</div>
+                        <div class="mt-1 flex items-center gap-1.5">
+                            <div class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold ${doc.result ? 'status-pill' : 'bg-slate-100 text-slate-500 border border-slate-200'}">${doc.result ? 'OCR' : 'Imported'}</div>
+                            <div class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold ${doc.kind === 'pdf' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-sky-50 text-sky-600 border border-sky-100'}">${doc.kind === 'pdf' ? 'PDF' : 'IMAGE'}</div>
+                        </div>
+                    </div>
+                </button>`).join('')}`;
+        fileList.querySelectorAll('[data-doc-id]').forEach((button) => {
+            button.addEventListener('click', () => {
+                state.activeDocumentId = Number(button.dataset.docId);
+                state.activePageIndex = 0;
+                state.activeBoxIndex = null;
+                refreshView();
+            });
+        });
+    }
+
+    function renderPageOptions() {
+        const doc = getActiveDocument();
+        const pages = doc?.result?.pages || [];
+        pageSelect.innerHTML = pages.length
+            ? pages.map((page, index) => `<option value="${index}" ${index === state.activePageIndex ? 'selected' : ''}>Page ${page.pageNumber}</option>`).join('')
+            : '<option value="">Page 1</option>';
+    }
+
+    function renderViewer() {
+        const doc = getActiveDocument();
+        const page = getActivePage();
+        if (!doc) {
+            viewerWrapper.style.aspectRatio = '0.72';
+            viewerWrapper.innerHTML = `<div class="absolute inset-0 flex flex-col items-center justify-center text-center text-slate-300 px-8"><i class="fas fa-file-import text-4xl mb-4"></i><p class="text-lg font-semibold">Import file to begin</p><p class="mt-2 text-sm">เลือกหรือวางไฟล์ทางซ้าย แล้วกด Scan to Document</p></div>`;
+            viewerMeta.textContent = 'Status: Idle';
+            return;
+        }
+        // Resolve preview image: from OCR result (images) or PDF.js render (PDFs)
+        const pdfImg = doc?.pdfPageImages?.[state.activePageIndex];
+        const previewImg = page?.preview?.image || pdfImg?.image || null;
+        const previewW = page?.preview?.width || pdfImg?.width || null;
+        const previewH = page?.preview?.height || pdfImg?.height || null;
+
+        if (!previewImg) {
+            viewerWrapper.style.aspectRatio = '0.72';
+            if (doc?.kind === 'pdf' && !doc?.result) {
+                // Still rendering with PDF.js
+                viewerWrapper.innerHTML = `<div class="absolute inset-0 flex flex-col items-center justify-center text-center px-8"><i class="fas fa-file-pdf text-4xl mb-4 text-rose-400 animate-pulse"></i><p class="text-lg font-semibold text-slate-700">กำลังโหลด PDF...</p><p class="mt-2 text-sm text-slate-400">รอสักครู่ หรือกด Scan to Document ได้เลย</p></div>`;
+            } else if (doc?.kind === 'pdf') {
+                viewerWrapper.innerHTML = `<div class="absolute inset-0 flex flex-col items-center justify-center text-center px-8"><i class="fas fa-file-pdf text-4xl mb-4 text-rose-400"></i><p class="text-lg font-semibold text-slate-700">PDF ready to scan</p><p class="mt-2 text-sm text-slate-400">ไฟล์ PDF ถูกเลือกแล้ว กด Scan to Document เพื่อส่งเข้า OCR</p></div>`;
+            } else {
+                viewerWrapper.innerHTML = `<div class="absolute inset-0 flex flex-col items-center justify-center text-center text-slate-300 px-8"><i class="fas fa-magnifying-glass text-4xl mb-4"></i><p class="text-lg font-semibold">Ready to scan</p><p class="mt-2 text-sm">เอกสารถูกเลือกแล้ว แต่ยังไม่ได้สแกน</p></div>`;
+            }
+            viewerMeta.textContent = 'Status: Ready';
+            return;
+        }
+        const boxes = page?.boxes || [];
+        viewerWrapper.style.aspectRatio = `${previewW} / ${previewH}`;
+        viewerWrapper.style.transform = `scale(${state.zoom})`;
+        viewerWrapper.innerHTML = `
+            <img src="${previewImg}" alt="document preview" class="w-full h-full object-contain block bg-white">
+            <div class="absolute inset-0">
+                ${boxes.map((box, index) => `
+                    <button type="button" class="ocr-box ${index === state.activeBoxIndex ? 'active' : ''}" data-box-index="${index}" style="left:${box.bounds.left * 100}%;top:${box.bounds.top * 100}%;width:${box.bounds.width * 100}%;height:${box.bounds.height * 100}%">
+                        <span class="ocr-badge">${escapeHtml(box.label)}</span>
+                    </button>`).join('')}
+            </div>`;
+        viewerWrapper.querySelectorAll('[data-box-index]').forEach((button) => {
+            button.addEventListener('click', () => {
+                state.activeBoxIndex = Number(button.dataset.boxIndex);
+                renderViewer();
+                renderRightPanel();
+                const target = document.querySelector(`[data-segment-index="${state.activeBoxIndex}"]`);
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+        const statusLabel = doc?.result ? `Status: Completed   Size: ${previewW} x ${previewH}   File: ${doc.sizeLabel}` : `Status: Ready   Size: ${previewW} x ${previewH}   File: ${doc.sizeLabel}`;
+        viewerMeta.textContent = statusLabel;
+    }
+
+    function renderRightPanel() {
+        const doc = getActiveDocument();
+        const page = getActivePage();
+        if (!doc?.result) {
+            rightContent.innerHTML = '<div class="text-sm text-slate-400">ยังไม่มีผล OCR</div>';
+            return;
+        }
+        if (state.activeRightTab === 'inspector') {
+            const box = page?.boxes?.[state.activeBoxIndex] || null;
+            rightContent.innerHTML = `
+                <div class="space-y-4">
+                    <div class="rounded-xl border border-slate-200 bg-white p-4">
+                        <div class="text-[11px] uppercase tracking-widest text-slate-400 mb-2">Document</div>
+                        <div class="text-sm font-semibold text-slate-800">${escapeHtml(doc.name)}</div>
+                        <div class="text-xs text-slate-500 mt-1">Pages ${doc.result.pageCount} | Boxes ${(page?.boxes || []).length}</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-white p-4">
+                        <div class="text-[11px] uppercase tracking-widest text-slate-400 mb-2">Selected Box</div>
+                        ${box ? `<div class="text-xs text-blue-600 font-semibold mb-2">${escapeHtml(box.label)}</div><div class="text-sm leading-7 text-slate-700">${escapeHtml(box.content)}</div>` : '<div class="text-sm text-slate-400">คลิกกรอบบนกระดาษเพื่อ inspect</div>'}
+                    </div>
+                </div>`;
+            return;
+        }
+        if (state.activeFormat === 'word') {
+            rightContent.innerHTML = `<div class="prose max-w-none">${markdownToHtml(doc.result.markdown)}</div>`;
+            return;
+        }
+        if (state.activeFormat === 'pdf') {
+            rightContent.innerHTML = `
+                <div class="space-y-4">
+                    <div class="rounded-xl border border-slate-200 bg-white p-4">
+                        <div class="text-[11px] uppercase tracking-widest text-slate-400 mb-2">PDF Export Summary</div>
+                        <div class="text-sm text-slate-700 leading-7">เอกสารนี้มี ${doc.result.pageCount} หน้า และ OCR boxes รวม ${(doc.result.pages || []).reduce((sum, item) => sum + ((item.boxes || []).length), 0)} จุด</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 leading-7">${escapeHtml((page?.text || '').slice(0, 1400))}</div>
+                </div>`;
+            return;
+        }
+        const segments = page?.boxes || [];
+        const titleSegment = segments.find((item) => item.label === 'title');
+        const activeContent = state.activeBoxIndex != null ? segments[state.activeBoxIndex]?.content : '';
+        rightContent.innerHTML = `
+            <article>
+                <h1 class="text-[28px] leading-tight font-bold text-slate-800 mb-5">${escapeHtml(titleSegment?.content || doc.name)}</h1>
+                <div class="space-y-3">
+                    ${segments.map((segment, index) => `
+                        <button type="button" data-segment-index="${index}" class="segment-item ${index === state.activeBoxIndex ? 'active' : ''} w-full text-left rounded-xl border border-slate-200 bg-white p-4 transition hover:border-blue-300 hover:bg-blue-50">
+                            <div class="text-[10px] uppercase tracking-widest text-blue-500 font-bold mb-1">${escapeHtml(segment.label)}</div>
+                            <div class="text-[14px] leading-8 text-slate-700">${escapeHtml(segment.content || '(empty)')}</div>
+                        </button>`).join('')}
+                </div>
+                ${activeContent ? `<div class="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 leading-7"><span class="font-bold">Highlighted:</span> ${escapeHtml(activeContent)}</div>` : ''}
+            </article>`;
+        rightContent.querySelectorAll('[data-segment-index]').forEach((button) => {
+            button.addEventListener('click', () => {
+                state.activeBoxIndex = Number(button.dataset.segmentIndex);
+                renderViewer();
+                renderRightPanel();
+            });
+        });
+    }
+
+    function refreshMeta() {
+        const doc = getActiveDocument();
+        fileTitle.textContent = doc ? doc.name : 'ยังไม่มีไฟล์';
+        activeFileName.textContent = doc ? doc.name : 'No file selected';
+        metaStatus.textContent = doc?.result ? 'Completed' : doc ? 'Imported' : 'Waiting';
+        metaPages.textContent = doc?.result?.pageCount || 0;
+        metaFileSize.textContent = doc ? doc.sizeLabel : '-';
+        if (doc?.result) {
+            const r = doc.result;
+            const pg0 = r.pages?.[0] || {};
+            const dbg = r._debug || {};
+            const debugLines = [
+                '=== SERVER DEBUG ===',
+                `filename: ${dbg.filename || '?'}`,
+                `browserMime: ${dbg.browserMime || '?'}`,
+                `isPdf (server): ${dbg.isPdf}`,
+                `contentType sent to Azure: ${dbg.contentType || '?'}`,
+                `fileSizeBytes: ${dbg.fileSizeBytes || '?'}`,
+                `rawContentLength: ${dbg.rawContentLength || 0}`,
+                `pagesCount: ${dbg.pagesCount || 0}`,
+                `paragraphsCount: ${dbg.paragraphsCount || 0}`,
+                `page0Lines: ${dbg.page0Lines || 0}`,
+                '',
+                '=== CLIENT DEBUG ===',
+                `pageCount: ${r.pageCount}`,
+                `pages[0].paragraphs: ${(pg0.paragraphs||[]).length}`,
+                `pages[0].boxes: ${(pg0.boxes||[]).length}`,
+                `pages[0].text.length: ${(pg0.text||'').length}`,
+                `pages[0].preview: ${pg0.preview ? 'has image' : 'null'}`,
+                `pdfPageImages rendered: ${(doc.pdfPageImages||[]).length}`,
+                `markdown.length: ${(r.markdown||'').length}`,
+                '',
+                '=== rawText (first 600) ===',
+                (r.rawText||'(empty)').slice(0, 600),
+            ];
+            rawOutput.textContent = debugLines.join('\n');
+        } else {
+            rawOutput.textContent = '';
+        }
+        serviceStatus.classList.toggle('hidden', !doc?.result);
+        serviceStatus.classList.toggle('flex', !!doc?.result);
+    }
+
+    function refreshView() {
+        renderFileList();
+        renderPageOptions();
+        renderViewer();
+        renderRightPanel();
+        refreshMeta();
+        zoomLabel.textContent = `${Math.round(state.zoom * 100)}%`;
+    }
+
+    async function scanActiveDocument() {
+        const doc = getActiveDocument();
+        if (!doc) return;
+        scanButton.disabled = true;
+        scanButtonLabel.textContent = 'Scanning...';
+        metaStatus.textContent = 'Processing';
+        rawOutput.textContent = 'Uploading file to OCR API...';
+        try {
+            const formData = new FormData();
+            formData.append('file', doc.file, doc.name);
+            const response = await fetch(OCR_API_URL, { method: 'POST', body: formData });
+            const responseText = await response.text();
+            if (!responseText) throw new Error(`Server returned empty response (HTTP ${response.status})`);
+            let data;
+            try { data = JSON.parse(responseText); }
+            catch (e) { throw new Error(`Invalid JSON from server: ${responseText.slice(0, 300)}`); }
+            if (!response.ok) throw new Error(data.detail || 'OCR request failed');
+            doc.result = data;
+            doc.previewImage = data.pages?.[0]?.preview?.image || doc.previewImage;
+            state.activePageIndex = 0;
+            state.activeBoxIndex = null;
+            refreshView();
+        } catch (error) {
+            rawOutput.textContent = String(error.message || error);
+            rightContent.innerHTML = `<div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">${escapeHtml(String(error.message || error))}</div>`;
+            metaStatus.textContent = 'Failed';
+        } finally {
+            scanButton.disabled = false;
+            scanButtonLabel.textContent = 'Scan to Document';
+        }
+    }
+
+    function addFiles(files) {
+        const acceptedFiles = files.filter(isSupportedFile);
+        if (!acceptedFiles.length) {
+            rawOutput.textContent = 'รองรับเฉพาะไฟล์ PDF, PNG, JPG และ JPEG';
+            rightContent.innerHTML = '<div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">รองรับเฉพาะไฟล์ PDF, PNG, JPG และ JPEG</div>';
+            return;
+        }
+
+        acceptedFiles.forEach((file, index) => {
+            const kind = getDocumentKind(file);
+            const docObj = {
+                id: Date.now() + index,
+                name: file.name,
+                sizeLabel: formatBytes(file.size),
+                file,
+                kind,
+                result: null,
+                previewImage: kind === 'image' ? URL.createObjectURL(file) : null,
+                pdfPageImages: [],
+            };
+            state.documents.unshift(docObj);
+            if (kind === 'pdf') renderPdfPages(docObj);
+        });
+        state.activeDocumentId = state.documents[0]?.id || null;
+        state.activePageIndex = 0;
+        state.activeBoxIndex = null;
+        refreshView();
+    }
+
+    importFiles.addEventListener('change', (event) => {
+        const files = Array.from(event.target.files || []);
+        if (files.length) addFiles(files);
+    });
+    scanButton.addEventListener('click', scanActiveDocument);
+    document.getElementById('zoom-in').addEventListener('click', () => { state.zoom = Math.min(1.6, state.zoom + 0.1); refreshView(); });
+    document.getElementById('zoom-out').addEventListener('click', () => { state.zoom = Math.max(0.6, state.zoom - 0.1); refreshView(); });
+    document.getElementById('fit-btn').addEventListener('click', () => { state.zoom = 1; refreshView(); });
+    document.getElementById('copy-raw-btn').addEventListener('click', () => navigator.clipboard.writeText(rawOutput.textContent || ''));
+    document.getElementById('copy-main-btn').addEventListener('click', () => navigator.clipboard.writeText(rightContent.innerText || ''));
+    pageSelect.addEventListener('change', (event) => { state.activePageIndex = Number(event.target.value || 0); state.activeBoxIndex = null; refreshView(); });
+    document.getElementById('prev-page-btn').addEventListener('click', () => { const doc = getActiveDocument(); if (!doc?.result) return; state.activePageIndex = Math.max(0, state.activePageIndex - 1); state.activeBoxIndex = null; refreshView(); });
+    document.getElementById('next-page-btn').addEventListener('click', () => { const doc = getActiveDocument(); if (!doc?.result) return; state.activePageIndex = Math.min(doc.result.pageCount - 1, state.activePageIndex + 1); state.activeBoxIndex = null; refreshView(); });
+    document.querySelectorAll('.format-tab').forEach((button) => button.addEventListener('click', () => { state.activeFormat = button.dataset.format; document.querySelectorAll('.format-tab').forEach((item) => item.classList.remove('active')); button.classList.add('active'); renderRightPanel(); }));
+    document.querySelectorAll('.right-tab').forEach((button) => button.addEventListener('click', () => { state.activeRightTab = button.dataset.rightTab; document.querySelectorAll('.right-tab').forEach((item) => item.classList.remove('active')); button.classList.add('active'); renderRightPanel(); }));
+
+    refreshView();
+    window.openFilePicker = openFilePicker;
+</script>
+</body>
+</html>
