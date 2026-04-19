@@ -96,19 +96,22 @@ async function addComment() {
 
     try {
         const transcript = getTranscriptContext();
+        if (!transcript) {
+            pendingMessage.text = 'กรุณาถอดเสียงก่อน แล้ว Agent AI จะช่วยสรุป วิเคราะห์ และตอบคำถามจากเนื้อหาที่ถอดเสียงได้';
+            pendingMessage.pending = false;
+            return;
+        }
+
         const messages = [
             {
                 role: 'system',
                 content: 'คุณคือ Agent AI ผู้ช่วยวิเคราะห์บทถอดเสียงการประชุม ตอบเป็นภาษาไทยแบบกระชับ ชัดเจน และอ้างอิงจาก transcript ที่ให้มาเท่านั้น ถ้า transcript ยังไม่มีข้อมูล ให้บอกตรงๆ ว่ายังไม่มี transcript สำหรับวิเคราะห์',
             },
         ];
-
-        if (transcript) {
-            messages.push({
-                role: 'system',
-                content: `Transcript ปัจจุบัน:\n\n${transcript}`,
-            });
-        }
+        messages.push({
+            role: 'system',
+            content: `Transcript ปัจจุบัน:\n\n${transcript}`,
+        });
 
         _comments
             .filter((item) => !item.pending)
