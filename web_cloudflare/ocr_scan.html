@@ -72,7 +72,7 @@
     <section class="bg-white border-r border-slate-200 min-h-0 grid" style="grid-template-rows:52px 1fr;">
         <div class="px-4 border-b border-slate-200 flex items-center justify-between gap-4">
             <div class="flex items-center gap-4 min-w-0">
-                <div id="active-file-name" class="font-semibold text-[13px] truncate">No file selected</div>
+
                 <button id="scan-button" class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[13px] font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
                     <i class="far fa-file-alt"></i>
                     <span id="scan-button-label">Scan to Document</span>
@@ -156,7 +156,7 @@
 
     const importFiles = document.getElementById('import-files');
     const fileList = document.getElementById('file-list');
-    const activeFileName = document.getElementById('active-file-name');
+
     const fileTitle = document.getElementById('file-title');
     const scanButton = document.getElementById('scan-button');
     const scanButtonLabel = document.getElementById('scan-button-label');
@@ -414,7 +414,7 @@
     function refreshMeta() {
         const doc = getActiveDocument();
         fileTitle.textContent = doc ? doc.name : 'ยังไม่มีไฟล์';
-        activeFileName.textContent = doc ? doc.name : 'No file selected';
+
         metaStatus.textContent = doc?.result ? 'Completed' : doc ? 'Imported' : 'Waiting';
         metaPages.textContent = doc?.result?.pageCount || 0;
         metaFileSize.textContent = doc ? doc.sizeLabel : '-';
