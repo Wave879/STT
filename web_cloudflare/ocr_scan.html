@@ -427,33 +427,7 @@
         metaFileSize.textContent = doc ? doc.sizeLabel : '-';
         if (doc?.result) {
             const r = doc.result;
-            const pg0 = r.pages?.[0] || {};
-            const dbg = r._debug || {};
-            const debugLines = [
-                '=== SERVER DEBUG ===',
-                `filename: ${dbg.filename || '?'}`,
-                `browserMime: ${dbg.browserMime || '?'}`,
-                `isPdf (server): ${dbg.isPdf}`,
-                `contentType sent to Azure: ${dbg.contentType || '?'}`,
-                `fileSizeBytes: ${dbg.fileSizeBytes || '?'}`,
-                `rawContentLength: ${dbg.rawContentLength || 0}`,
-                `pagesCount: ${dbg.pagesCount || 0}`,
-                `paragraphsCount: ${dbg.paragraphsCount || 0}`,
-                `page0Lines: ${dbg.page0Lines || 0}`,
-                '',
-                '=== CLIENT DEBUG ===',
-                `pageCount: ${r.pageCount}`,
-                `pages[0].paragraphs: ${(pg0.paragraphs||[]).length}`,
-                `pages[0].boxes: ${(pg0.boxes||[]).length}`,
-                `pages[0].text.length: ${(pg0.text||'').length}`,
-                `pages[0].preview: ${pg0.preview ? 'has image' : 'null'}`,
-                `pdfPageImages rendered: ${(doc.pdfPageImages||[]).length}`,
-                `markdown.length: ${(r.markdown||'').length}`,
-                '',
-                '=== rawText (first 600) ===',
-                (r.rawText||'(empty)').slice(0, 600),
-            ];
-            rawOutput.textContent = debugLines.join('\n');
+            rawOutput.textContent = r.rawText || r.markdown || '';
         } else {
             rawOutput.textContent = '';
         }

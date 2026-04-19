@@ -162,20 +162,8 @@ async function handleOcr(request, env) {
         filename: fileName,
         pageCount: pagePayload.length,
         markdown: markdown,
-        rawText: rawContent.slice(0, 50000), // cap to avoid size issues
+        rawText: rawContent.slice(0, 50000),
         pages: pagePayload,
-        _debug: {
-            filename: fileName,
-            browserMime: browserMime,
-            isPdf: isPdf,
-            contentType: contentType,
-            fileSizeBytes: fileBytes.byteLength,
-            rawContentLength: rawContent.length,
-            pagesCount: azPages.length,
-            paragraphsCount: azParagraphs.length,
-            page0Lines: (azPages[0] ? (azPages[0].lines || []).length : 0),
-            firstBytesHex: Array.from(new Uint8Array(fileBytes, 0, 4)).map(function(b){return b.toString(16).padStart(2,'0');}).join(' '),
-        },
     }, 200);
 }
 
