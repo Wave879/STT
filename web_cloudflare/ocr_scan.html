@@ -478,9 +478,17 @@
         metaStatus.textContent = 'Processing';
         rawOutput.textContent = 'Uploading file to OCR API...';
         try {
-            const formData = new FormData();
-            formData.append('file', doc.file, doc.name);
-            const response = await fetch(OCR_API_URL, { method: 'POST', body: formData });
+            // Send raw bytes — Cloudflare Workers has a large-file bug with FormData/multipart
+            const isPdf = doc.name.toLowerCase().endsWith('.pdf') || doc.file.type === 'application/pdf';
+            const fileContentType = isPdf ? 'application/pdf' : (doc.file.type || 'application/octet-stream');
+            const response = await fetch(OCR_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': fileContentType,
+                    'X-Filename': encodeURIComponent(doc.name),
+                },
+                body: doc.file,
+            });
             const responseText = await response.text();
             if (!responseText) throw new Error(`Server returned empty response (HTTP ${response.status})`);
             let data;

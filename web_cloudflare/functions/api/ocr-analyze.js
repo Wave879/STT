@@ -26,27 +26,46 @@ async function handleOcr(request, env) {
         return jsonResponse({ detail: 'Missing Azure credentials.' }, 500);
     }
 
-    let form;
-    try { form = await request.formData(); }
-    catch (e) { return jsonResponse({ detail: 'FormData parse error: ' + e.message }, 400); }
+    const ct = request.headers.get('Content-Type') || '';
 
-    const fileBlob = form.get('file');
-    if (!fileBlob) return jsonResponse({ detail: 'No "file" field in FormData' }, 400);
+    // Support both: raw PDF body (Content-Type: application/pdf) and multipart FormData
+    let fileBytes, fileName, browserMime, isPdf;
 
-    const fileName = fileBlob.name || 'document';
-    const browserMime = fileBlob.type || '';
+    if (ct.includes('application/pdf') || ct.includes('application/octet-stream') || (!ct.includes('multipart') && !ct.includes('form'))) {
+        // Raw body upload — avoids CF Workers FormData/multipart large-file bug
+        fileBytes = await request.arrayBuffer();
+        const rawName = request.headers.get('X-Filename') || 'document.pdf';
+        try { fileName = decodeURIComponent(rawName); } catch(e) { fileName = rawName; }
+        browserMime = ct.includes('application/pdf') ? 'application/pdf' : (ct || 'application/octet-stream');
+        isPdf = true;
+    } else {
+        // Multipart FormData
+        let form;
+        try { form = await request.formData(); }
+        catch (e) { return jsonResponse({ detail: 'FormData parse error: ' + e.message }, 400); }
 
-    // Read raw bytes first
-    const fileBytes = typeof fileBlob.arrayBuffer === 'function'
-        ? await fileBlob.arrayBuffer()
-        : await new Response(fileBlob).arrayBuffer();
+        const fileBlob = form.get('file');
+        if (!fileBlob) return jsonResponse({ detail: 'No "file" field in FormData' }, 400);
 
-    // Detect PDF by magic bytes %PDF (most reliable — handles Thai filenames & wrong MIME)
+        fileName = fileBlob.name || 'document';
+        browserMime = fileBlob.type || '';
+
+        // Read raw bytes via Response wrapper (avoids CF Workers File.arrayBuffer() bug with large files)
+        fileBytes = await new Response(fileBlob).arrayBuffer();
+    }
+
+    if (!fileBytes || fileBytes.byteLength === 0) {
+        return jsonResponse({ detail: 'Uploaded file is empty' }, 400);
+    }
+
+    // Detect PDF by magic bytes %PDF
     const magic = new Uint8Array(fileBytes, 0, 4);
-    const isPdf = (magic[0] === 0x25 && magic[1] === 0x50 && magic[2] === 0x44 && magic[3] === 0x46)
-        || fileName.toLowerCase().endsWith('.pdf')
-        || browserMime === 'application/pdf'
-        || browserMime === 'application/x-pdf';
+    if (!isPdf) {
+        isPdf = (magic[0] === 0x25 && magic[1] === 0x50 && magic[2] === 0x44 && magic[3] === 0x46)
+            || (fileName || '').toLowerCase().endsWith('.pdf')
+            || browserMime === 'application/pdf'
+            || browserMime === 'application/x-pdf';
+    }
 
     const contentType = isPdf ? 'application/pdf' : (browserMime || 'image/jpeg');
 
@@ -155,6 +174,7 @@ async function handleOcr(request, env) {
             pagesCount: azPages.length,
             paragraphsCount: azParagraphs.length,
             page0Lines: (azPages[0] ? (azPages[0].lines || []).length : 0),
+            firstBytesHex: Array.from(new Uint8Array(fileBytes, 0, 4)).map(function(b){return b.toString(16).padStart(2,'0');}).join(' '),
         },
     }, 200);
 }
