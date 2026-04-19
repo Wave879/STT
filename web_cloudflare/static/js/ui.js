@@ -36,6 +36,9 @@ function switchRight(name) {
 // ── Agent AI Chat ─────────────────────────────────────────────
 const _comments = [];
 let _agentBusy = false;
+let _agentSystemPrompt = null;
+
+const DEFAULT_AGENT_SYSTEM_PROMPT = 'คุณคือ Agent AI ผู้ช่วยตอบคำถามจากบทถอดเสียงของไฟล์ที่ผู้ใช้กำลังเปิดอยู่ ตอบเป็นภาษาไทยแบบกระชับ ชัดเจน อ้างอิงจาก transcript ที่ให้มาเท่านั้น ห้ามใช้ความรู้ภายนอกเติม ถ้าข้อมูลไม่พอให้บอกว่าไม่มีในไฟล์นี้';
 
 function escapeHtmlChat(value) {
     return String(value || '')
@@ -58,6 +61,20 @@ function getTranscriptContext() {
         || document.getElementById('final-text-display')?.innerText
         || '';
     return String(src || '').trim().slice(0, 12000);
+}
+
+async function getAgentSystemPrompt() {
+    if (_agentSystemPrompt) return _agentSystemPrompt;
+    try {
+        const resp = await fetch('static/prompts/agent-ai-system.txt', { cache: 'no-store' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const text = (await resp.text()).trim();
+        _agentSystemPrompt = text || DEFAULT_AGENT_SYSTEM_PROMPT;
+    } catch (error) {
+        console.warn('Failed to load Agent AI system prompt file:', error.message || error);
+        _agentSystemPrompt = DEFAULT_AGENT_SYSTEM_PROMPT;
+    }
+    return _agentSystemPrompt;
 }
 
 function setAgentBusy(isBusy) {
@@ -102,10 +119,12 @@ async function addComment() {
             return;
         }
 
+        const systemPrompt = await getAgentSystemPrompt();
+
         const messages = [
             {
                 role: 'system',
-                content: 'คุณคือ Agent AI ผู้ช่วยวิเคราะห์บทถอดเสียงการประชุม ตอบเป็นภาษาไทยแบบกระชับ ชัดเจน และอ้างอิงจาก transcript ที่ให้มาเท่านั้น ถ้า transcript ยังไม่มีข้อมูล ให้บอกตรงๆ ว่ายังไม่มี transcript สำหรับวิเคราะห์',
+                content: systemPrompt,
             },
         ];
         messages.push({
