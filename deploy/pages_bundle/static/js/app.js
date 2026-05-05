@@ -215,11 +215,11 @@ async function runAllBrowser(file) {
     let correctionDone = false;
 
     // ── สร้าง promise รับผลแต่ละโมเดล เมื่อเสร็จให้ update UI ทันที ──
-    const maiPromise = runMAIRest(file, STT_LANG)
+    const maiPromise = runMAIRest(file, STT_LANG, int16)
         .then(txt => { state.results.mai = txt; renderClickableText(outMai, txt); return txt; })
         .catch(err => { outMai.innerHTML = `<span class="text-red-400 text-xs">❌ MAI: ${err.message}</span>`; return ''; });
 
-    const whisperPromise = runWhisperRest(file, STT_LANG)
+    const whisperPromise = runWhisperRest(file, STT_LANG, int16)
         .then(txt => { state.results.whisper = txt; renderClickableText(outWhisper, txt); return txt; })
         .catch(err => { outWhisper.innerHTML = `<span class="text-red-400 text-xs">❌ Whisper: ${err.message}</span>`; return ''; });
 
