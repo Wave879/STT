@@ -1,0 +1,49 @@
+services:
+  betimes-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: betimes-web
+    ports:
+      - "9100:9100"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # ให้ container เรียก wisper บน host ได้
+    environment:
+      PORT: 9100
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:9100}
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:9100/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  db:
+    image: postgres:16-alpine
+    container_name: betimes-postgres
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${PGDATABASE:-betimes_apps}
+      POSTGRES_USER: ${PGUSER:-btimes}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-btimes123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-btimes} -d ${PGDATABASE:-betimes_apps}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
