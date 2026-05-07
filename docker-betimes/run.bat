@@ -18,16 +18,15 @@ if %errorlevel% neq 0 (
 )
 
 :: ── ตรวจสอบ wisper server ────────────────────────────────────
-echo  [1/4] ตรวจสอบ Wisper server (port 8001)...
-curl -s --max-time 3 http://localhost:8001/ >nul 2>&1
+echo  [1/4] ตรวจสอบ Wisper server (192.168.10.19:9000)...
+curl -s --max-time 3 http://192.168.10.19:9000/ >nul 2>&1
 if %errorlevel% neq 0 (
     echo.
-    echo  ⚠️  Wisper server ไม่ได้รันอยู่ที่ port 8001
+    echo  ⚠️  Wisper server ไม่ได้รันอยู่ที่ 192.168.10.19:9000
     echo  ℹ️  Whisper จะ fallback ไปใช้ Azure OpenAI แทน
-    echo  ℹ️  หากต้องการใช้ local Wisper ให้รัน: start.bat ก่อน
     echo.
 ) else (
-    echo  ✅ Wisper server พร้อมที่ port 8001
+    echo  ✅ Wisper server พร้อมที่ 192.168.10.19:9000
 )
 
 :: ── หยุด container เก่า ──────────────────────────────────────

@@ -6,8 +6,6 @@ services:
     container_name: betimes-web
     ports:
       - "9100:9100"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"   # ให้ container เรียก wisper บน host ได้
     environment:
       PORT: 9100
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:9100}
